@@ -1,0 +1,12 @@
+.env
+data/raw/
+data/processed/
+__pycache__/
+*.pyc
+*.session
+*.session-journal
+.DS_Store
+
+# credenziali Telegram (sessione = accesso all account)
+tg.session
+.tg_pending.json
