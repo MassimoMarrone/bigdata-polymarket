@@ -64,8 +64,10 @@ def daily() -> pd.DataFrame:
     df = price.merge(social, on=["market_id", "day"], how="left")
     df[["volume", "sentiment"]] = df[["volume", "sentiment"]].fillna(0)
     df = df.sort_values(["market_id", "day"])
-    # Changes, not levels: |dP| is "the market moved", regardless of direction.
-    df["price_move"] = df.groupby("market_id")["price"].diff().abs()
+    # Changes, not levels. Keep the SIGNED delta too: the direction analysis
+    # (sentiment_direction.py) needs to know which way the market moved.
+    df["price_delta"] = df.groupby("market_id")["price"].diff()
+    df["price_move"] = df["price_delta"].abs()
     return df.dropna(subset=["price_move"])
 
 
