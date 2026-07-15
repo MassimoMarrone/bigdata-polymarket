@@ -1,0 +1,24 @@
+# Deploy su maxserver: docker compose -f deploy/docker-compose.yml up -d --build
+# (dal root del repo). I container si parlano per nome su server_net; nessuna
+# porta host: il tunnel Cloudflare instrada polymarket.massimomarrone.dev -> site:80.
+services:
+  polymarket-site:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.site
+    container_name: polymarket-site
+    restart: unless-stopped
+    networks: [server_net]
+
+  polymarket-dashboard:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.dashboard
+    container_name: polymarket-dashboard
+    restart: unless-stopped
+    networks: [server_net]
+    mem_limit: 1g
+
+networks:
+  server_net:
+    external: true

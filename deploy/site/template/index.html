@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markets move first — Polymarket × Social Media</title>
+<meta name="description" content="A data-engineering study of 420 Polymarket contracts and 160k social posts: prediction markets price outcomes months ahead, while social media reacts one day late.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📈</text></svg>">
+</head>
+<body>
+
+<header class="site">
+  <div class="inner">
+    <span class="brand"><b>polymarket</b>×social</span>
+    <nav>
+      <a href="/" class="active">Overview</a>
+      <a href="/report/">Report</a>
+      <a href="/decisions/">Decisions</a>
+      <a href="/setup/">Setup</a>
+      <a href="https://github.com/maxmarrone/bigdata-polymarket" rel="noopener">GitHub</a>
+      <a href="/app/" class="cta">Live dashboard →</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <p class="eyebrow">An empirical study · 420 contracts · 162k posts · 3 domains</p>
+    <h1><span class="market">Markets move first.</span><br>
+        <span class="social">Social media follows</span> — one day later.</h1>
+    <p class="sub">
+      I built a full ingestion-to-analysis pipeline linking <b>Polymarket prediction
+      markets</b> to the public discourse on <b>Bluesky and Telegram</b>. The result is
+      unambiguous: prices are calibrated <b>months before resolution</b>, and social
+      chatter peaks <b>one day after</b> the market moves — commentary, not prophecy.
+    </p>
+    <div class="actions">
+      <a class="btn primary" href="/app/">Open the live dashboard</a>
+      <a class="btn ghost" href="/report/">Read the technical report</a>
+    </div>
+
+    <figure class="lagchart">
+      <svg viewBox="0 0 920 260" role="img" aria-label="Bar chart: correlation between social volume and absolute price change, by time shift from minus 7 to plus 7 days. The peak is at plus one day.">
+        <!-- axis -->
+        <line x1="30" y1="220" x2="890" y2="220" stroke="#223049" stroke-width="1"/>
+        <line x1="460" y1="30" x2="460" y2="228" stroke="#223049" stroke-width="1" stroke-dasharray="4 5"/>
+        <text x="460" y="248" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">market moves (day 0)</text>
+        <!-- bars: r(volume, |dP|) at lag -7..+7, real values from leadlag.parquet -->
+        <!-- height = r * 1500 ; x centered on 460, step 57 -->
+        <g>
+          <rect x="41"  y="216.3" width="40" height="3.7"   fill="#2E4468"/>
+          <rect x="98"  y="212.1" width="40" height="7.9"   fill="#2E4468"/>
+          <rect x="155" y="186"   width="40" height="34"    fill="#2E4468"/>
+          <rect x="212" y="169.8" width="40" height="50.2"  fill="#2E4468"/>
+          <rect x="269" y="183.7" width="40" height="36.3"  fill="#2E4468"/>
+          <rect x="326" y="197.7" width="40" height="22.3"  fill="#2E4468"/>
+          <rect x="383" y="181.2" width="40" height="38.8"  fill="#2E4468"/>
+          <rect x="440" y="124.6" width="40" height="95.4"  fill="#5B9DFF"/>
+          <rect x="497" y="44.8"  width="40" height="175.2" fill="#E0B15C"/>
+          <rect x="554" y="125.4" width="40" height="94.6"  fill="#2E4468"/>
+          <rect x="611" y="145.6" width="40" height="74.4"  fill="#2E4468"/>
+          <rect x="668" y="191.8" width="40" height="28.2"  fill="#2E4468"/>
+          <rect x="725" y="220"   width="40" height="5.6"   fill="#26344E" transform="translate(0,0)"/>
+          <rect x="782" y="220"   width="40" height="5.1"   fill="#26344E"/>
+          <rect x="839" y="218.7" width="40" height="1.3"   fill="#2E4468"/>
+        </g>
+        <!-- labels -->
+        <text x="61"  y="238" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">−7</text>
+        <text x="289" y="238" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">−3</text>
+        <text x="517" y="238" fill="#E0B15C" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">+1</text>
+        <text x="745" y="238" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">+5</text>
+        <!-- annotation -->
+        <text x="517" y="32" fill="#E0B15C" font-family="IBM Plex Mono, monospace" font-size="13" text-anchor="middle">r = 0.117 — the social echo</text>
+      </svg>
+      <figcaption>Cross-correlation of social volume ~ |Δprice| at time shifts of ±7 days,
+      averaged over 3 domains. Flat on the left (nothing anticipates), <span class="amber">peak at +1 day</span>
+      (everything reacts).</figcaption>
+    </figure>
+  </section>
+
+  <section class="block">
+    <p class="kicker">Findings</p>
+    <h2>Three results, all measured</h2>
+    <div class="findings">
+      <div class="finding">
+        <div class="num">0.49 <span style="font-size:18px;color:var(--muted)">vs</span> 0.09</div>
+        <h3>The market knows early</h3>
+        <p>Mean "Yes" price of eventual winners vs losers, 120 days before resolution.
+           Prediction markets are well calibrated months ahead — there is very little
+           left for social media to anticipate.</p>
+      </div>
+      <div class="finding amber">
+        <div class="num">82% <span style="font-size:18px;color:var(--muted)">vs</span> 31%</div>
+        <h3>Platforms specialise in opposite directions</h3>
+        <p>Bluesky covers 82% of contracts and is dominated by sport; Telegram covers 31%,
+           is all politics and finance, and has essentially no sport. Which platform is
+           informative depends on the domain.</p>
+      </div>
+      <div class="finding">
+        <div class="num">AUC 0.98 <span style="font-size:18px;color:var(--muted)">vs</span> 0.70</div>
+        <h3>Social features add nothing to price</h3>
+        <p>Predicting outcomes with temporal cross-validation and a 7-day anti-leakage
+           cutoff: price alone reaches AUC 0.98, the best social features 0.70 — and the
+           combination doesn't beat price. The discourse is already priced in.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <p class="kicker">Pipeline</p>
+    <h2>From two public APIs to a validated dataset</h2>
+    <div class="pipeline">
+      <div class="stage"><div class="t">collect</div><div class="d">420 resolved contracts, 95k price snapshots (Gamma/CLOB) · 51k Bluesky posts · 111k Telegram messages</div></div>
+      <div class="stage"><div class="t">link</div><div class="d">keyword recall → MPNet semantic filter → Gemini LLM-as-judge on a stratified sample (κ = 0.434)</div></div>
+      <div class="stage"><div class="t">enrich</div><div class="d">language detection, RoBERTa sentiment on 36k English posts, spaCy NER, per-pair dedup</div></div>
+      <div class="stage"><div class="t">store</div><div class="d">immutable raw JSONL → Parquet queried in-place by DuckDB (measured 100× faster than Spark here)</div></div>
+      <div class="stage"><div class="t">analyse</div><div class="d">lead/lag cross-correlation, sentiment direction tests, outcome prediction with temporal CV</div></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <p class="kicker">Dashboard</p>
+    <h2>Six views, one story</h2>
+    <div class="shots">
+      <a href="/app/?view=0"><img src="/shots/tab1-contratti.png" alt="Contracts view: durations, volumes, price calibration" loading="lazy"><div class="cap">01 · contracts — the market knows early</div></a>
+      <a href="/app/?view=2"><img src="/shots/tab3-segnale.png" alt="Signal view: lead/lag correlation peaking at +1 day" loading="lazy"><div class="cap">03 · signal ↔ market — the +1 day echo</div></a>
+      <a href="/app/?view=1"><img src="/shots/tab2-discorso.png" alt="Discourse view: volumes, sentiment, entities" loading="lazy"><div class="cap">02 · social discourse — sentiment &amp; entities</div></a>
+      <a href="/app/?view=4"><img src="/shots/tab5-predizione.png" alt="Prediction view: AUC by feature set" loading="lazy"><div class="cap">05 · prediction — price beats everything</div></a>
+    </div>
+    <p style="margin-top:22px"><a class="btn primary" href="/app/">Explore the live dashboard →</a></p>
+  </section>
+
+  <section class="block" style="border-bottom:none">
+    <p class="kicker">Engineering</p>
+    <h2>Choices I can defend</h2>
+    <div class="choices">
+      <div class="choice"><div class="t">DuckDB over Spark — measured, not assumed</div>
+        <p>Same aggregation on both engines, data replicated up to 200×:
+        <span class="mono-val">0.09s vs 9.94s</span> on the real dataset. Break-even
+        extrapolates to ~10⁸ rows. "Big" is a property of the data, not a default stack.</p></div>
+      <div class="choice"><div class="t">Linking validated, not asserted</div>
+        <p>The contract-to-post linking is the scientific core: three WTI contracts share
+        the same keywords. A funnel (keywords → embeddings → LLM judge) turns "it looks
+        right" into <span class="mono-val">κ = 0.434</span> on a stratified sample.</p></div>
+      <div class="choice"><div class="t">Anti-leakage by construction</div>
+        <p>Every prediction feature — social and price — stops 7 days before resolution;
+        validation is walk-forward on chronologically ordered contracts. The honest
+        result (social adds nothing) survives the setup.</p></div>
+      <div class="choice"><div class="t">A negative result, kept</div>
+        <p>Five cross-encoders failed to beat the bi-encoder (pre-registered threshold
+        κ &gt; 0.55). The failure is diagnostic — these models learn topical relevance,
+        not claim-level matching — and it is documented in the
+        <a href="/decisions/">decision log</a>.</p></div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="site">
+  <div class="inner">
+    <span>Massimo Marrone — Big Data Engineering 2025/26, Track 2</span>
+    <a href="https://github.com/maxmarrone/bigdata-polymarket" rel="noopener">Source on GitHub</a>
+    <a href="/report/">Technical report (IT)</a>
+  </div>
+</footer>
+
+</body>
+</html>

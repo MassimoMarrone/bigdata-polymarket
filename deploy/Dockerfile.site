@@ -1,0 +1,10 @@
+# Stadio 1: genera il sito statico dai markdown (il server non ha bisogno di python)
+FROM python:3.12-slim AS build
+RUN pip install --no-cache-dir markdown
+COPY deploy/site /src/site
+RUN python3 /src/site/build.py
+
+# Stadio 2: nginx serve dist/ e fa da proxy verso la dashboard
+FROM nginx:1.27-alpine
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /src/site/dist /usr/share/nginx/html
