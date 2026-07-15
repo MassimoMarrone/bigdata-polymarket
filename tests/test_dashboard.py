@@ -19,6 +19,7 @@ VIEWS = [
     "2 · Discorso social (Task 2.2)",
     "3 · Segnale ↔ mercato (Task 2.3)",
     "4 · Confronto piattaforme (Task 2.4)",
+    "5 · Predizione (Task 3)",
     "🔎 Esplora i post",
 ]
 

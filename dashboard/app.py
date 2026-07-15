@@ -20,7 +20,7 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).parent))
 import data as d
-from views import contratti, discorso, esplora, piattaforme, segnale
+from views import contratti, discorso, esplora, piattaforme, predizione, segnale
 
 st.set_page_config(page_title="Polymarket × Social", layout="wide")
 
@@ -33,6 +33,7 @@ VIEWS = {
     "2 · Discorso social (Task 2.2)": discorso,
     "3 · Segnale ↔ mercato (Task 2.3)": segnale,
     "4 · Confronto piattaforme (Task 2.4)": piattaforme,
+    "5 · Predizione (Task 3)": predizione,
     "🔎 Esplora i post": esplora,
 }
 
