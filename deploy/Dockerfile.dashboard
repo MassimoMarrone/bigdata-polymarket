@@ -7,7 +7,8 @@ RUN pip install --no-cache-dir \
 
 WORKDIR /srv
 COPY dashboard/ dashboard/
-COPY data/processed/ data/processed/
+# data/processed NON è nell'immagine: montato come volume (vedi docker-compose.yml).
+# I file con testi scrapati non stanno nel repo: vanno portati sul server via scp.
 
 EXPOSE 8501
 # baseUrlPath=/app: la dashboard vive dietro il proxy nginx su /app

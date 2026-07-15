@@ -18,6 +18,9 @@ services:
     restart: unless-stopped
     networks: [server_net]
     mem_limit: 1g
+    volumes:
+      # gli aggregati vengono dal repo; posts/enriched/scores arrivano via scp
+      - ../data/processed:/srv/data/processed:ro
 
 networks:
   server_net:

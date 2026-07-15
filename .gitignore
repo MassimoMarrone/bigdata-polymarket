@@ -1,6 +1,12 @@
 .env
 data/raw/
 data/processed/_bench/
+# contenuti scrapati di terzi (testi post, profili autore): NON nel repo pubblico.
+# Vanno sul server via scp (vedi deploy/README) e al docente fuori da GitHub.
+data/processed/posts.parquet
+data/processed/post_enriched.jsonl
+data/processed/post_scores.jsonl
+data/processed/linking_validation.jsonl
 __pycache__/
 *.pyc
 .pytest_cache/
