@@ -11,6 +11,35 @@ from data import query
 SENT_COLORS = {"positive": "#2ca02c", "neutral": "#7f7f7f", "negative": "#d62728"}
 
 
+@st.cache_data(show_spinner=False)
+def _top_entities(where: str) -> "pd.DataFrame":
+    """Parse NER blobs and rank entities — the loop over 40k rows is the slow part,
+    so it is cached per filter combination, not re-run at every widget interaction."""
+    import pandas as pd
+    ents = query(f"""
+        SELECT category, mentioned_entities FROM linked
+        WHERE {where} AND mentioned_entities IS NOT NULL
+              AND mentioned_entities != 'null'
+    """)
+    rows = []
+    for cat, blob in ents.itertuples(index=False):
+        # la colonna può contenere "NaN"/numeri: json.loads li accetta ma non sono liste
+        try:
+            parsed = json.loads(blob) if isinstance(blob, str) else None
+        except (ValueError, TypeError):
+            parsed = None
+        if not isinstance(parsed, list):
+            continue
+        for e in parsed:
+            name = e[0] if isinstance(e, (list, tuple)) else e
+            rows.append((cat, str(name)))
+    if not rows:
+        return pd.DataFrame()
+    return (pd.DataFrame(rows, columns=["category", "entita"])
+            .value_counts().rename("n").reset_index()
+            .groupby("category").head(12))
+
+
 def render(where: str) -> None:
     vol = query(f"""
         SELECT platform, category, count(*) AS n FROM linked
@@ -62,28 +91,8 @@ def render(where: str) -> None:
     st.subheader("Entità più citate (NER)")
     st.caption("Le entità estratte con spaCy dai post linkati: una verifica qualitativa "
                "che il linking aggancia post davvero sul tema del dominio.")
-    ents = query(f"""
-        SELECT category, mentioned_entities FROM linked
-        WHERE {where} AND mentioned_entities IS NOT NULL
-              AND mentioned_entities != 'null'
-    """)
-    rows = []
-    for cat, blob in ents.itertuples(index=False):
-        # la colonna può contenere "NaN"/numeri: json.loads li accetta ma non sono liste
-        try:
-            parsed = json.loads(blob) if isinstance(blob, str) else None
-        except (ValueError, TypeError):
-            parsed = None
-        if not isinstance(parsed, list):
-            continue
-        for e in parsed:
-            name = e[0] if isinstance(e, (list, tuple)) else e
-            rows.append((cat, str(name)))
-    if rows:
-        import pandas as pd
-        top = (pd.DataFrame(rows, columns=["category", "entita"])
-               .value_counts().rename("n").reset_index()
-               .groupby("category").head(12))
+    top = _top_entities(where)
+    if len(top):
         st.plotly_chart(px.bar(top, x="n", y="entita", color="category",
                                orientation="h", facet_col="category",
                                facet_col_wrap=3, height=500,

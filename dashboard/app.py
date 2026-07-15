@@ -36,8 +36,15 @@ VIEWS = {
     "🔎 Esplora i post": esplora,
 }
 
+# ?view=N deep-links a tab (demo, screenshots); the radio still drives navigation
+try:
+    default = max(0, min(len(VIEWS) - 1, int(st.query_params.get("view", 0))))
+except ValueError:
+    default = 0
+
 with st.sidebar:
-    choice = st.radio("Analisi", list(VIEWS), label_visibility="collapsed")
+    choice = st.radio("Analisi", list(VIEWS), index=default,
+                      label_visibility="collapsed")
 where = d.sidebar_filters()
 
 VIEWS[choice].render(where)
