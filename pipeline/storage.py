@@ -83,7 +83,44 @@ def posts() -> pd.DataFrame:
     # so the identity of a row is the pair, not the post.
     df = df.drop_duplicates(subset=["post_id", "market_id"])
     df["text"] = df["text"].fillna("").str.strip()
-    return df[df["text"].str.len() > 0]
+    return _extra_fields(df[df["text"].str.len() > 0])
+
+
+def _extra_fields(df: pd.DataFrame) -> pd.DataFrame:
+    """The schema fields collected in a second pass (bluesky_extra.py) plus NER.
+
+    All three joins are optional and per-POST (not per-pair): followers belong to
+    the author, entities and comments to the post. Missing file -> NULL column,
+    so the pipeline runs at any stage of the collection.
+    """
+    ent = _read(RAW.parent / "processed" / "post_enriched.jsonl")
+    if not ent.empty:
+        ent = ent[["post_id", "entities"]].rename(columns={"entities": "mentioned_entities"})
+        ent["mentioned_entities"] = ent["mentioned_entities"].apply(json.dumps)
+        df = df.merge(ent.drop_duplicates("post_id"), on="post_id", how="left")
+    else:
+        df["mentioned_entities"] = None
+
+    authors = _read(RAW / "bluesky" / "authors.jsonl")
+    if not authors.empty:
+        df = df.merge(authors[["author_id", "author_followers"]]
+                      .drop_duplicates("author_id"), on="author_id", how="left")
+    else:
+        df["author_followers"] = None
+
+    comments = _read(RAW / "bluesky" / "comments.jsonl")
+    if not comments.empty:
+        comments = comments[comments["text"].fillna("") != ""]
+        sample = (comments.groupby("parent_post_id")
+                  .apply(lambda g: json.dumps(g[["text", "author_id", "published_at",
+                                                 "like_count"]].to_dict("records")),
+                         include_groups=False)
+                  .rename("comments").reset_index()
+                  .rename(columns={"parent_post_id": "post_id"}))
+        df = df.merge(sample, on="post_id", how="left")
+    else:
+        df["comments"] = None
+    return df
 
 
 def main() -> None:
