@@ -416,7 +416,8 @@ Dashboard Streamlit interattiva a **sei schede**: le quattro analisi del Task 2 
 La dashboard è **pubblicata e navigabile** su
 [polymarket.massimomarrone.dev/app](https://polymarket.massimomarrone.dev/app) (deep-link alle
 singole schede con `?view=0…5`), accanto a questa relazione e al log delle decisioni; gli
-screenshot delle 6 schede sono in `screenshots/` (tab1…tab6, 1600px).
+screenshot delle 6 schede sono in `screenshots/` (tab1…tab6, 1600px logici a densità doppia,
+catturati dall'istanza pubblicata).
 
 ---
 
