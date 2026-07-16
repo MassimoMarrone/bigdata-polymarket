@@ -39,5 +39,50 @@
   </div>
 </footer>
 
+<!-- Le graffe sono raddoppiate: page.html passa per str.format() in build.py. -->
+<script src="/vendor/mermaid.min.js"></script>
+<script>
+  // Palette allineata a style.css: il sito e' scuro, i diagrammi devono esserlo.
+  mermaid.initialize({{
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {{
+      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      fontSize: '14px',
+      background: '#0B1220',
+      primaryColor: '#182236',
+      primaryTextColor: '#E8ECF4',
+      primaryBorderColor: '#5B9DFF',
+      secondaryColor: '#131C2E',
+      tertiaryColor: '#131C2E',
+      mainBkg: '#182236',
+      lineColor: '#8B96AB',
+      textColor: '#E8ECF4',
+      nodeBorder: '#223049',
+      clusterBkg: '#0F1828',
+      clusterBorder: '#223049',
+      edgeLabelBackground: '#131C2E',
+      // gantt
+      taskBkgColor: '#182236',
+      taskTextColor: '#E8ECF4',
+      taskTextOutsideColor: '#E8ECF4',
+      taskTextDarkColor: '#0B1220',
+      activeTaskBkgColor: '#5B9DFF',
+      activeTaskBorderColor: '#5B9DFF',
+      doneTaskBkgColor: '#6FD3A3',
+      doneTaskBorderColor: '#6FD3A3',
+      critBkgColor: '#E06C6C',
+      critBorderColor: '#E06C6C',
+      gridColor: '#223049',
+      sectionBkgColor: '#131C2E',
+      sectionBkgColor2: '#0F1828',
+      altSectionBkgColor: '#0F1828',
+      titleColor: '#E8ECF4'
+    }},
+    flowchart: {{ htmlLabels: true, curve: 'basis' }},
+    gantt: {{ barHeight: 24, fontSize: 13, leftPadding: 170 }}
+  }});
+</script>
+
 </body>
 </html>

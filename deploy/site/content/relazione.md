@@ -12,32 +12,20 @@ date modified: Wednesday, July 15th 2026, 10:46:49 pm
 
 Autore: Massimo Marrone · Svolto individualmente
 
-> ⚙️ **BOZZA DI LAVORO (2026-07-15).** Struttura completa, risultati misurati inseriti.
-> I punti con 🔲 sono da rifinire insieme. La sezione 8 (dashboard) va corredata di screenshot.
+**Codice:** [github.com/MassimoMarrone/bigdata-polymarket](https://github.com/MassimoMarrone/bigdata-polymarket) ·
+**Dashboard live e documentazione:** [polymarket.massimomarrone.dev](https://polymarket.massimomarrone.dev)
 
 ---
 
 ### 1. Introduzione e obiettivo
 
-I *prediction market* come Polymarket aggregano l'intelligenza collettiva sul verificarsi di
+I *prediction market* come Polymarket aggregano l'intelligenza collettiva sul verificarsi di eventi futuri: il prezzo di un contratto, tra 0 e 1, si legge come la probabilità che il mercato assegna a un esito. Questo progetto studia empiricamente la relazione tra il **discorso sui social media** e gli **esiti dei contratti Polymarket**, su tre domini (politica, finanza, sport).
 
-eventi futuri: il prezzo di un contratto, tra 0 e 1, si legge come la probabilità che il mercato
+**Domanda di ricerca.** Il discorso social *anticipa* i movimenti del mercato (segnale predittivo), oppure li *commenta* dopo che sono avvenuti (segnale reattivo)?
 
-assegna a un esito. Questo progetto studia empiricamente la relazione tra il **discorso sui social
+**Anticipazione del risultato.** Il discorso social sui prediction market è risultato **reattivo, non predittivo**: il picco di attività social segue di ~1 giorno i movimenti di prezzo (§7).
 
-media** e gli **esiti dei contratti Polymarket**, su tre domini (politica, finanza, sport).
-
-**Domanda di ricerca.** Il discorso social *anticipa* i movimenti del mercato (segnale predittivo),
-
-oppure li *commenta* dopo che sono avvenuti (segnale reattivo)?
-
-**Anticipazione del risultato.** Il discorso social sui prediction market è risultato **reattivo,
-
-non predittivo**: il picco di attività social segue di ~1 giorno i movimenti di prezzo (§7).
-
-**Scope.** Task 1 (ingestion), Task 2 (dashboard analitica) e Task 3 opzionale (outcome
-
-prediction, §8) completi.
+**Scope.** Task 1 (ingestion), Task 2 (dashboard analitica) e Task 3 opzionale (outcome prediction, §8) completi.
 
 ---
 
@@ -92,31 +80,51 @@ La pipeline segue un approccio **ELT** (Extract-Load-Transform), non ETL:
 - **Livello processed** (`data/processed/*.parquet`) — dati normalizzati e uniti, rigenerabili da
   zero dal livello raw con un comando. È il livello analitico.
 
+**Figura 1 — architettura end-to-end.** La freccia che conta è quella che *non* c'è: nessun
+collector scrive mai nel livello processed, e nessuna analisi legge mai dal raw. Il livello
+processed è interamente ricostruibile con `python -m pipeline.storage`; il raw, invece, è l'unica
+cosa che non si può rigenerare (le API cambiano, i post spariscono) ed è per questo append-only.
+
+```mermaid
+flowchart TB
+  %% dichiarati al contrario: in TB mermaid li dispone da destra a sinistra
+  TG["<b>Telegram</b><br/>Telethon · 9 canali"]
+  BS["<b>Bluesky</b><br/>AT Protocol"]
+  RD["<b>Reddit</b><br/>search.json · Scrapfly"]
+  PM["<b>Polymarket</b><br/>Gamma + CLOB API"]
+
+  RJ[("<b>LIVELLO RAW</b> — data/raw/*.jsonl<br/>append-only · immutabile · schema-on-read<br/>420 contratti · 95k prezzi · 166k post grezzi")]
+
+  LK["<b>linking.py</b> — keyword + MPNet ≥ 0.35"]
+  EN["<b>enrich.py</b> — lingua · sentiment · NER"]
+  ST["<b>storage.py</b> — normalizza · denormalizza · unisce"]
+
+  PQ[("<b>LIVELLO PROCESSED</b> — data/processed/*.parquet<br/>rigenerabile con un comando · colonnare<br/>380 contratti · 61k post · commenti e follower inline")]
+
+  DB{{"<b>DuckDB</b> — query in place, nessun server"}}
+
+  CO["<b>correlation*.py</b><br/>lead/lag · sentiment"]
+  PR["<b>predict.py</b><br/>Task 3 · CV temporale"]
+  DA["<b>dashboard/app.py</b><br/>Streamlit · 6 view"]
+
+  PM --> RJ
+  RD --> RJ
+  BS --> RJ
+  TG --> RJ
+  RJ --> LK --> EN --> ST --> PQ
+  PQ --> DB
+  DB --> CO
+  DB --> PR
+  DB --> DA
+  CO -.->|"leadlag*.parquet"| PQ
+  PR -.->|"results.json"| PQ
+```
+
 #### 3.2 Raccolta Polymarket
 
-Contratti risolti e serie storiche di prezzo dalla Gamma API e dalla CLOB API. **420 contratti**
+Contratti risolti e serie storiche di prezzo dalla Gamma API e dalla CLOB API. **420 contratti** risolti raccolti (≥130 per dominio); un filtro di qualità a valle (≥10 snapshot di prezzo — un contratto con 2 punti non può sostenere un'analisi lead/lag) ne promuove **380 al livello analitico** (130 finance / 127 politics / 123 sports — il minimo di 100 per dominio resta ampiamente rispettato), con **95.094 snapshot** di prezzo giornalieri.
 
-risolti raccolti (≥130 per dominio); un filtro di qualità a valle (≥10 snapshot di prezzo — un
-
-contratto con 2 punti non può sostenere un'analisi lead/lag) ne promuove **380 al livello
-
-analitico** (130 finance / 127 politics / 123 sports — il minimo di 100 per dominio resta
-
-ampiamente rispettato), con **95.094 snapshot** di prezzo giornalieri.
-
-Una scelta di campionamento si è rivelata critica. Ordinando i mercati per volume di scambi, i
-
-primi N appartenevano a pochissimi *eventi*: un evento Polymarket contiene decine di *mercati*
-
-quasi identici (37 mercati "chi nominerà Trump alla Fed?" — uno per candidato; 39 mercati sul
-
-prezzo del petrolio WTI — uno per soglia). Il primo campione aveva 356 contratti ma **solo 15
-
-argomenti reali**, il che avrebbe reso impossibile il linking (mercati diversi generano le stesse
-
-parole chiave) e statisticamente vuota l'analisi di correlazione. Si è imposto un **tetto di 3
-
-mercati per evento**, portando la diversità tematica da 15 a **129 eventi distinti**.
+Una scelta di campionamento si è rivelata critica. Ordinando i mercati per volume di scambi, i primi N appartenevano a pochissimi *eventi*: un evento Polymarket contiene decine di *mercati* quasi identici (37 mercati "chi nominerà Trump alla Fed?" — uno per candidato; 39 mercati sul prezzo del petrolio WTI — uno per soglia). Il primo campione aveva 356 contratti ma **solo 15 argomenti reali**, il che avrebbe reso impossibile il linking (mercati diversi generano le stesse parole chiave) e statisticamente vuota l'analisi di correlazione. Si è imposto un **tetto di 3 mercati per evento**, portando la diversità tematica da 15 a **129 eventi distinti**.
 
 #### 3.3 Raccolta social
 
@@ -158,13 +166,7 @@ documentato come limite di piattaforma.
 
 ### 4. Il contract-to-post linking (il cuore metodologico)
 
-Collegare un post al contratto giusto è il problema centrale del progetto. Un approccio a sole
-
-parole chiave produce falsi positivi **sistematici**: tre contratti sul petrolio WTI (soglie 100$,
-
-105$, 30$ — domande diverse) generano la stessa query e quindi gli stessi post. Correlare il prezzo
-
-di un contratto con i post di un altro invaliderebbe tutta l'analisi.
+Collegare un post al contratto giusto è il problema centrale del progetto. Un approccio a sole parole chiave produce falsi positivi **sistematici**: tre contratti sul petrolio WTI (soglie 100$, 105$, 30$ — domande diverse) generano la stessa query e quindi gli stessi post. Correlare il prezzo di un contratto con i post di un altro invaliderebbe tutta l'analisi.
 
 **Pipeline a imbuto in tre stadi:**
 
@@ -173,6 +175,32 @@ di un contratto con i post di un altro invaliderebbe tutta l'analisi.
    Gira in locale, gratis, applicabile a tutti i post.
 3. **Validazione** — un giudice LLM esterno (**Gemini**) valuta in zero-shot la pertinenza su un
    campione stratificato di 200 coppie, per **misurare** la qualità del filtro invece di asserirla.
+
+**Figura 2 — l'imbuto, con i numeri reali.** Il filtro semantico scarta il **36% delle coppie**
+recuperate dalle parole chiave: è la misura diretta di quanto un linking a sole keyword sarebbe
+stato sbagliato. Si noti che il giudice LLM **non è nella pipeline** — non filtra nulla, è un ramo
+laterale che serve solo a misurare il filtro. Metterlo in linea avrebbe significato pagare una
+chiamata API per 65k coppie e, soprattutto, non avere più niente con cui validare.
+
+```mermaid
+flowchart TB
+  A["61.848 post raccolti · 380 contratti<br/>(Reddit 6.491 · Bluesky 48.204 · Telegram 7.153 linkabili)"]
+  B["<b>Stadio 1 — Recall</b><br/>parole chiave dalla domanda del contratto<br/>alta copertura, bassa precisione"]
+  C[("65.159 coppie<br/>post × contratto candidate")]
+  D["<b>Stadio 2 — Precision</b><br/>MPNet bi-encoder, coseno domanda~post<br/>soglia 0.35 · locale, gratis, su tutte le coppie"]
+  E[("41.770 coppie sopra soglia<br/>30.642 post unici · −36% scartato")]
+  F["<b>Analisi</b><br/>lead/lag · sentiment · Task 3"]
+
+  J["<b>Stadio 3 — Validazione</b><br/>giudice Gemini, zero-shot<br/>campione stratificato 200 coppie"]
+  K["<b>κ di Cohen</b><br/>0.434 Bluesky+Telegram<br/>0.504 Reddit<br/>= accordo moderato"]
+
+  A --> B --> C --> D --> E --> F
+  E -.->|"campiona"| J --> K
+  K -.->|"calibra la soglia"| D
+
+  style J fill:#2A2418,stroke:#E0B15C,color:#E8ECF4
+  style K fill:#2A2418,stroke:#E0B15C,color:#E8ECF4
+```
 
 #### 4.1 Calibrazione e ablazione dei modelli
 
@@ -188,25 +216,11 @@ linking è stato validato *separatamente* anche su Reddit, con lo stesso giudice
 stratificato di 200 coppie: **κ = 0.504** (moderate, fascia alta — leggermente superiore).
 Il metodo generalizza: non è calibrato su una piattaforma sola.
 
-**Scelta: MPNet @ 0.35** (accordo *moderato* nella scala di Landis-Koch). Recall alto preferito a
-
-precisione alta: i falsi positivi residui si diluiscono nell'aggregazione giornaliera, i falsi
-
-negativi cancellano segnale che non torna.
+**Scelta: MPNet @ 0.35** (accordo *moderato* nella scala di Landis-Koch). Recall alto preferito a precisione alta: i falsi positivi residui si diluiscono nell'aggregazione giornaliera, i falsi negativi cancellano segnale che non torna.
 
 #### 4.2 Un esperimento negativo istruttivo
 
-Si è testato se un **cross-encoder** (che legge domanda e post *insieme*) battesse il bi-encoder.
-
-Soglia di successo fissata *prima*: κ > 0.55. Cinque modelli testati; nessuno supera MPNet (miglior
-
-cross-encoder: κ=0.426). Il risultato è informativo: il difetto non è **architetturale** (bivs
-
-cross-encoding) ma di **obiettivo di addestramento** — questi modelli imparano la *rilevanza
-
-topica*, e per un post sul Villarreal e un contratto sul Villarreal la risposta è correttamente
-
-"sì"; nessuno sa cercare "il post dice qualcosa su *questa specifica affermazione*".
+Si è testato se un **cross-encoder** (che legge domanda e post *insieme*) battesse il bi-encoder. Soglia di successo fissata *prima*: κ > 0.55. Cinque modelli testati; nessuno supera MPNet (miglior cross-encoder: κ=0.426). Il risultato è informativo: il difetto non è **architetturale** (bivs cross-encoding) ma di **obiettivo di addestramento** — questi modelli imparano la *rilevanza topica*, e per un post sul Villarreal e un contratto sul Villarreal la risposta è correttamente "sì"; nessuno sa cercare "il post dice qualcosa su *questa specifica affermazione*".
 
 ---
 
@@ -228,9 +242,7 @@ topica*, e per un post sul Villarreal e un contratto sul Villarreal la risposta 
 
 ### 6. Task 1.5 — Storage: perché Parquet + DuckDB
 
-La traccia chiede di **motivare** la scelta di storage. Si sono considerate le alternative NoSQL
-
-del corso:
+La traccia chiede di **motivare** la scelta di storage. Si sono considerate le alternative NoSQL del corso:
 
 - **MongoDB** (documentale) — ottimo per l'eterogeneità di schema e lo streaming; valutato e scartato.
 - **Parquet + DuckDB** (colonnare) — **scelto**, perché tutte le query del progetto sono
@@ -239,11 +251,7 @@ del corso:
   la ridondanza della denormalizzazione — problematica in scrittura — è ottima quando si fa **solo
   analisi**, perché risparmia le join. DuckDB interroga i Parquet in place, senza server.
 
-**Perché non Spark (misurato, non asserito).** La traccia suggerisce Spark "per dataset *large-scale*".
-
-Il nostro è di decine di MB. Si è eseguita la **stessa aggregazione** in DuckDB e PySpark su dati
-
-replicati fino a 200×:
+**Perché non Spark (misurato, non asserito).** La traccia suggerisce Spark "per dataset *large-scale*". Il nostro è di decine di MB. Si è eseguita la **stessa aggregazione** in DuckDB e PySpark su dati replicati fino a 200×:
 
 | Righe | DuckDB | Spark | Spark più lento |
 |---|---|---|---|
@@ -252,9 +260,7 @@ replicati fino a 200×:
 | 3.203.100 | 0,35s | 2,69s | 7,7× |
 | 12.812.400 | 1,03s | 4,88s | 4,8× |
 
-Sui dati reali DuckDB è **~100× più veloce**; il pareggio si estrapola verso ~10⁸ righe, ossia
-
-quando i dati non stanno più in una macchina. "Big" è una proprietà del dataset, non un default.
+Sui dati reali DuckDB è **~100× più veloce**; il pareggio si estrapola verso ~10⁸ righe, ossia quando i dati non stanno più in una macchina. "Big" è una proprietà del dataset, non un default.
 
 ---
 
@@ -270,11 +276,7 @@ Separando i contratti per esito effettivo, il prezzo medio di "Yes" diverge pres
 | 30 | 0,59 | 0,09 |
 | 7 | 0,70 | 0,06 |
 
-Il mercato prezza correttamente i perdenti (~0,08) fin dall'inizio ed è ben calibrato mesi prima
-
-della risoluzione. Ne consegue che i social hanno poco spazio per "anticiparlo", il che affina la
-
-domanda di ricerca dai *livelli* ai *movimenti* (§7.3).
+Il mercato prezza correttamente i perdenti (~0,08) fin dall'inizio ed è ben calibrato mesi prima della risoluzione. Ne consegue che i social hanno poco spazio per "anticiparlo", il che affina la domanda di ricerca dai *livelli* ai *movimenti* (§7.3).
 
 #### 7.2 Discorso e confronto cross-platform (Task 2.2 / 2.4): specializzazione complementare
 
@@ -303,11 +305,7 @@ l'aggiunta di Reddit rafforza il segnale invece di diluirlo. La curva è piatta 
 (social in anticipo), sale fino a +1 e decade: il profilo classico di un segnale **reattivo**,
 coerente su tutti e tre i domini.
 
-**E la direzione del sentiment?** La traccia chiede esplicitamente se la *direzione* del sentiment
-
-sia allineata alla direzione dei movimenti e se *shift rapidi* del sentiment aggregato accompagnino
-
-i movimenti significativi. Tre misure, tutte negative:
+**E la direzione del sentiment?** La traccia chiede esplicitamente se la *direzione* del sentiment sia allineata alla direzione dei movimenti e se *shift rapidi* del sentiment aggregato accompagnino i movimenti significativi. Tre misure, tutte negative:
 
 1. **Lead/lag firmato** — r(ΔP, sentiment medio) è piatto a ogni sfasamento (±0,02, picco spurio
    +3gg a r=0,023): nessun profilo coerente.
@@ -316,15 +314,7 @@ i movimenti significativi. Tre misure, tutte negative:
    vs 50%: p=0,389, non significativo; stesso esito in tutti e tre i domini).
 3. **Shift di sentiment vs grandi movimenti** — r(|Δsentiment|, |ΔP|) anch'esso piatto (max 0,038).
 
-C'è una ragione strutturale, oltre alla debolezza del segnale: la polarità del sentiment riguarda
-
-il *tema*, non l'esito "Yes". Per "Will Iran strike Israel?" un rialzo del prezzo è una *cattiva*
-
-notizia — sentiment negativo accompagna legittimamente un prezzo che sale. Misurarlo onestamente,
-
-invece di forzare un allineamento, è parte del risultato: **è il volume del discorso a reagire ai
-
-movimenti, non la sua polarità a predirli.**
+C'è una ragione strutturale, oltre alla debolezza del segnale: la polarità del sentiment riguarda il *tema*, non l'esito "Yes". Per "Will Iran strike Israel?" un rialzo del prezzo è una *cattiva* notizia — sentiment negativo accompagna legittimamente un prezzo che sale. Misurarlo onestamente, invece di forzare un allineamento, è parte del risultato: **è il volume del discorso a reagire ai movimenti, non la sua polarità a predirli.**
 
 **Le piattaforme non sono intercambiabili (osservazione).** Scomponendo il lead/lag *per
 piattaforma* (`correlation_platform.py`) emerge un contrasto tra le due piattaforme ricche di
@@ -346,13 +336,7 @@ esterno).
 
 ### 8. Task 3 (opzionale) — Outcome prediction dalle feature social
 
-La domanda del Task 3: il discorso social — da solo o in combinazione col prezzo — contiene
-
-informazione **statisticamente utile** per prevedere l'esito di risoluzione? Dopo §7 l'ipotesi
-
-pre-registrata era chiara: il prezzo dominerà; il numero interessante è se il social vi *aggiunga*
-
-qualcosa.
+La domanda del Task 3: il discorso social — da solo o in combinazione col prezzo — contiene informazione **statisticamente utile** per prevedere l'esito di risoluzione? Dopo §7 l'ipotesi pre-registrata era chiara: il prezzo dominerà; il numero interessante è se il social vi *aggiunga* qualcosa.
 
 **Setup sperimentale** (`pipeline/predict.py`):
 
@@ -376,6 +360,28 @@ qualcosa.
   allo stesso modo, l'AUC-ROC è indipendente dalla soglia, e la baseline di maggioranza
   (0,756) è dichiarata come termine di paragone.
 
+**Figura 3 — la finestra dei dati, per un contratto.** Il taglio a *risoluzione − 7 giorni* è la
+difesa contro il leakage più insidioso di questo progetto: nell'ultima settimana di vita di un
+contratto il prezzo converge a 0 o a 1 e i post smettono di *prevedere* per iniziare a
+*commentare* un esito ormai noto. Un modello addestrato su quella zona avrebbe un'accuratezza
+eccellente e un valore predittivo nullo. La zona rossa è dati che possediamo e che buttiamo via.
+
+```mermaid
+gantt
+    title Contratto di esempio — risoluzione 30/06
+    dateFormat YYYY-MM-DD
+    axisFormat %d/%m
+    section Contratto
+    Vita del contratto (prezzo quotato)        :active, 2026-04-01, 2026-06-30
+    section Feature USATE
+    Post + prezzi ammessi (fino al cutoff)     :done,   2026-04-01, 2026-06-23
+    Prezzo Yes al cutoff e a 30gg              :done,   2026-05-24, 2026-06-23
+    section Zona cieca SCARTATA
+    7gg buttati                                :crit,   2026-06-23, 2026-06-30
+    section Etichetta
+    Yes/No                                     :milestone, 2026-06-30, 0d
+```
+
 **Risultati** (media su 5 fold; baseline di maggioranza: accuracy 0,756):
 
 | Feature set | Modello | Accuracy | AUC-ROC |
@@ -391,55 +397,41 @@ la baseline di maggioranza in accuracy**: il segnale esiste ed è debole. Le fea
 sono le migliori del blocco social (AUC 0,642): *di cosa* si parla è più informativo di *quanto*
 se ne parla. (2) Il prezzo al cutoff è quasi un classificatore perfetto (AUC 0,966) — la versione
 predittiva del §7.1. (3) Il combinato **non supera in AUC** il prezzo da solo (0,942 vs 0,966):
-l'informazione social è già incorporata nel prezzo. È la stessa conclusione di §7.3
-
-riformulata come esperimento di classificazione: il mercato ha già scontato il discorso social.
+l'informazione social è già incorporata nel prezzo. È la stessa conclusione di §7.3 riformulata come esperimento di classificazione: il mercato ha già scontato il discorso social.
 
 ---
 
 ### 9. La dashboard
 
-Dashboard Streamlit interattiva a **sei schede**: le quattro analisi del Task 2 (contratti,
+Dashboard Streamlit interattiva a **sei schede**: le quattro analisi del Task 2 (contratti, discorso social, piattaforme, segnale↔mercato), i risultati del Task 3 (metriche di classificazione per feature set) e una scheda di esplorazione libera del singolo contratto (prezzo + post linkati + sentiment sovrapposti). Architettura modulare — una view per file sotto `dashboard/views/`, un `app.py` di solo routing, filtri condivisi in sidebar (dominio, esito, finestra temporale) applicati a ogni scheda. Legge il livello Parquet via DuckDB con connessione e query cache-ate (`st.cache_resource` / `st.cache_data`); tutti i grafici sui post passano dal filtro semantico (nessun match grezzo raggiunge le visualizzazioni). Ogni scheda è coperta da uno smoke test con `streamlit.testing.AppTest` (`tests/test_dashboard.py`). Avvio: `streamlit run dashboard/app.py`.
 
-discorso social, piattaforme, segnale↔mercato), i risultati del Task 3 (metriche di
-
-classificazione per feature set) e una scheda di esplorazione libera del singolo contratto
-
-(prezzo + post linkati + sentiment sovrapposti). Architettura modulare — una view per
-
-file sotto `dashboard/views/`, un `app.py` di solo routing, filtri condivisi in sidebar (dominio,
-
-esito, finestra temporale) applicati a ogni scheda. Legge il livello Parquet via DuckDB con
-
-connessione e query cache-ate (`st.cache_resource` / `st.cache_data`); tutti i grafici sui post
-
-passano dal filtro semantico (nessun match grezzo raggiunge le visualizzazioni). Ogni scheda è
-
-coperta da uno smoke test con `streamlit.testing.AppTest` (`tests/test_dashboard.py`).
-
-Avvio: `streamlit run dashboard/app.py`.
-
-Gli screenshot delle 6 schede sono in `screenshots/` (tab1…tab6, 1600px) — da impaginare
-
-nella versione finale del documento.
-
-> 🔲 *Da fare insieme: provare la demo live per l'orale (deep-link: `?view=0…5`).*
+La dashboard è **pubblicata e navigabile** su
+[polymarket.massimomarrone.dev/app](https://polymarket.massimomarrone.dev/app) (deep-link alle
+singole schede con `?view=0…5`), accanto a questa relazione e al log delle decisioni; gli
+screenshot delle 6 schede sono in `screenshots/` (tab1…tab6, 1600px).
 
 ---
 
 ### 10. Riflessione conclusiva
 
-Tre delle scoperte più rilevanti sono nate da **fallimenti e misure**, non da un percorso lineare:
+Le scoperte più rilevanti sono nate da **fallimenti e misure**, non da un percorso lineare. Il **campionamento degenere** ha mostrato che il numero di righe non è informazione: 356 contratti
+che parlavano di 15 argomenti erano un dataset più povero dei 380 che ne coprono 129. Il **caso
+WTI** ha rivelato che il linking è il problema scientifico del progetto e non un dettaglio
+implementativo — tre soglie di prezzo diverse generano le stesse parole chiave, e correlare il
+prezzo di un contratto con i post di un altro avrebbe invalidato ogni numero a valle. Il
+**cross-encoder** che non batte il bi-encoder ha insegnato più di un successo: la diagnosi
+(obiettivo di addestramento sbagliato, non architettura sbagliata) vale più del κ mancato. E l'**accesso alle piattaforme** si è rivelato un risultato, non un preliminare: Reddit è stato
+raggiunto solo per la via indicata dal corso (proxy Scrapfly) dopo che tutte le vie gratuite hanno
+restituito 403, mentre X è rimasto fuori — non per scelta, ma per tre prove empiriche
+convergenti documentate in §2. Sapere *perché* una fonte non è collezionabile, e dimostrarlo, è
+parte del lavoro di data engineering tanto quanto collezionarla.
 
-l'inaccessibilità di Reddit ha imposto di capire *cosa* rende una piattaforma sostituibile; il
-
-campionamento degenere ha mostrato che il numero di righe non è informazione; il caso WTI ha
-
-rivelato che il linking è il problema scientifico del progetto, non un dettaglio implementativo.
-
-La misura sistematica — coverage, κ del giudice, benchmark Spark, lead/lag — è ciò che distingue
-
-un dataset scaricato da un dataset compreso.
+La misura sistematica — coverage, κ del giudice su tre piattaforme, benchmark DuckDB/Spark,
+lead/lag per piattaforma, ablazione dei feature set — è ciò che distingue un dataset scaricato da
+un dataset compreso. Il risultato onesto del progetto è negativo e vale più di uno positivo
+inventato: il segnale social esiste (r=0,14) ma è debole, insegue il mercato più di quanto lo
+anticipi, e non aggiunge nulla al prezzo per prevedere l'esito (AUC 0,553 contro 0,966). Il
+mercato, semplicemente, ha già letto i social.
 
 ---
 
@@ -449,7 +441,7 @@ un dataset scaricato da un dataset compreso.
 pipeline/polymarket.py     # contratti + prezzi
 pipeline/bluesky.py        # post Bluesky (app password in .env)
 pipeline/bluesky_extra.py  # seconda passata Bluesky: commenti (thread) + follower autori
-pipeline/reddit_collect.py # post Reddit via Scrapfly (search.json, proxy residenziale)
+pipeline/reddit_scrapfly.py # post Reddit via Scrapfly (search.json, proxy residenziale)
 pipeline/reddit_integrate.py # score MPNet + sentiment/NER incrementali per Reddit
 pipeline/reddit_kappa.py   # validazione linking Reddit (giudice Gemini) -> κ 0.504
 pipeline/telegram.py       # messaggi Telegram (sessione Telethon)

@@ -5,6 +5,8 @@ Local preview:  python3 deploy/site/build.py && python3 -m http.server -d deploy
 """
 from __future__ import annotations
 
+import html
+import re
 import shutil
 from pathlib import Path
 
@@ -26,6 +28,25 @@ PAGES = {
 
 MD_EXT = ["tables", "fenced_code", "toc", "sane_lists"]
 
+# fenced_code rende ```mermaid come <pre><code class="language-mermaid">, con il
+# sorgente HTML-escaped. mermaid.js vuole <pre class="mermaid"> e il testo grezzo
+# (i diagrammi contengono <br/> e <b>, che vanno riconsegnati non escaped).
+MERMAID_RE = re.compile(
+    r'<pre><code class="language-mermaid">(.*?)</code></pre>', re.DOTALL)
+
+# I sorgenti sono note di Obsidian: hanno un frontmatter YAML che non e'
+# contenuto e che altrimenti finisce in pagina come "tags: [] date created: ...".
+FRONTMATTER_RE = re.compile(r'\A---\n.*?\n---\n', re.DOTALL)
+
+
+def strip_frontmatter(text: str) -> str:
+    return FRONTMATTER_RE.sub('', text, count=1)
+
+
+def unwrap_mermaid(body: str) -> str:
+    return MERMAID_RE.sub(
+        lambda m: f'<pre class="mermaid">{html.unescape(m.group(1))}</pre>', body)
+
 
 def nav_classes(active: str) -> dict[str, str]:
     return {f"active_{name}": "active" if name == active else ""
@@ -40,17 +61,21 @@ def main() -> None:
     shutil.copy(TEMPLATE / "index.html", DIST / "index.html")
     shutil.copy(TEMPLATE / "style.css", DIST / "style.css")
     shutil.copytree(CONTENT / "shots", DIST / "shots")
+    # mermaid.js e' vendorizzato, non da CDN: la demo dell'orale deve reggere
+    # anche senza rete verso jsdelivr.
+    shutil.copytree(TEMPLATE / "vendor", DIST / "vendor")
 
     page_tpl = (TEMPLATE / "page.html").read_text(encoding="utf-8")
     for slug, (src, title, lang, badge) in PAGES.items():
-        body = markdown.markdown((CONTENT / src).read_text(encoding="utf-8"),
-                                 extensions=MD_EXT)
-        html = page_tpl.format(content=body, title=title, lang=lang,
+        raw = strip_frontmatter((CONTENT / src).read_text(encoding="utf-8"))
+        body = unwrap_mermaid(markdown.markdown(raw, extensions=MD_EXT))
+        page = page_tpl.format(content=body, title=title, lang=lang,
                                langnote=badge, **nav_classes(slug))
         out = DIST / slug / "index.html"
         out.parent.mkdir(parents=True)
-        out.write_text(html, encoding="utf-8")
-        print(f"  {slug}/index.html  <- {src}")
+        out.write_text(page, encoding="utf-8")
+        n = body.count('<pre class="mermaid">')
+        print(f"  {slug}/index.html  <- {src}" + (f"  ({n} diagrammi)" if n else ""))
 
     print(f"dist pronto: {DIST}")
 

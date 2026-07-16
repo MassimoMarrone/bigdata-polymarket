@@ -199,34 +199,16 @@ Questo risponde direttamente al Task 2.4 ("identify contracts for which one plat
 
 ### [2026-07-13] Calibrazione del linking: MPNet @ 0.35 (κ = 0.434)
 
-**Risultato misurato** (`pipeline/linking.py`, output in `data/processed/linking_validation.jsonl`):
-
-giudice Gemini (`gemini-flash-lite-latest`, zero-shot, temperature 0) su **200 coppie
-
-(contratto, post)** campionate in modo **stratificato** lungo tutto il range di similarità.
-
-Campione bilanciato: **104/200 rilevanti (52%)** — il giudice non è degenere.
+**Risultato misurato** (`pipeline/linking.py`, output in `data/processed/linking_validation.jsonl`): giudice Gemini (`gemini-flash-lite-latest`, zero-shot, temperature 0) su **200 coppie (contratto, post)** campionate in modo **stratificato** lungo tutto il range di similarità. Campione bilanciato: **104/200 rilevanti (52%)** — il giudice non è degenere.
 
 | Modello | Soglia | Cohen's κ | Precision | Recall |
 |---|---|---|---|---|
 | MiniLM (`all-MiniLM-L6-v2`) | 0.45 | 0.410 | 0.72 | 0.70 |
 | **MPNet (`all-mpnet-base-v2`)** | **0.35** | **0.434** | **0.69** | **0.85** |
 
-**Scelta:** MPNet con soglia 0.35 → accordo *moderato* (Landis–Koch). Recall alto (0.85)
+**Scelta:** MPNet con soglia 0.35 → accordo *moderato* (Landis–Koch). Recall alto (0.85) preferito a precision alta: i falsi positivi residui si diluiscono nell'aggregazione giornaliera del volume/sentiment, mentre i falsi negativi cancellano segnale che non torna più.
 
-preferito a precision alta: i falsi positivi residui si diluiscono nell'aggregazione giornaliera
-
-del volume/sentiment, mentre i falsi negativi cancellano segnale che non torna più.
-
-**Nota su un errore evitato:** il primo run produceva κ = 0.615 — un numero *dall'aria migliore*,
-
-ma calcolato su **10 coppie**, perché la quota gratuita di `gemini-2.5-flash` si era esaurita e
-
-gli errori venivano trattati come "verdetto assente" invece che come fallimenti. Aggiunta una
-
-**guardia** che rifiuta di riportare il κ sotto le 50 valutazioni valide. Lezione: una metrica
-
-che non fallisce rumorosamente può mentire in silenzio.
+**Nota su un errore evitato:** il primo run produceva κ = 0.615 — un numero *dall'aria migliore*, ma calcolato su **10 coppie**, perché la quota gratuita di `gemini-2.5-flash` si era esaurita e gli errori venivano trattati come "verdetto assente" invece che come fallimenti. Aggiunta una **guardia** che rifiuta di riportare il κ sotto le 50 valutazioni valide. Lezione: una metrica che non fallisce rumorosamente può mentire in silenzio.
 
 **Ablazione = materiale per la voce *Experiments*** della griglia di valutazione.
 
@@ -234,11 +216,7 @@ che non fallisce rumorosamente può mentire in silenzio.
 
 ### [2026-07-13] Cross-encoder per il linking: ESPERIMENTO NEGATIVO (soglia non superata)
 
-**Ipotesi:** il bi-encoder confronta due vettori compressi separatamente e perde la relazione fine
-
-fra domanda e post (falsi positivi tipo *"Villarreal vince la Liga?"* ← *"Villarreal vs Sevilla:
-
-statistiche"*). Un **cross-encoder**, che legge domanda e post **insieme**, dovrebbe risolverlo.
+**Ipotesi:** il bi-encoder confronta due vettori compressi separatamente e perde la relazione fine fra domanda e post (falsi positivi tipo *"Villarreal vince la Liga?"* ← *"Villarreal vs Sevilla: statistiche"*). Un **cross-encoder**, che legge domanda e post **insieme**, dovrebbe risolverlo.
 
 **Soglia di successo pre-registrata (prima di eseguire): κ > 0.55.**
 
@@ -254,51 +232,19 @@ statistiche"*). Un **cross-encoder**, che legge domanda e post **insieme**, dovr
 | nli-deberta-v3-base | entailment | 0.00 | 0.089 | 0.54 | 0.97 |
 | qnli-electra-base | entailment | 0.97 | 0.082 | 0.85 | 0.11 |
 
-⚠️ *Tutti i κ sono il valore migliore trovato cercando la soglia ottimale sul set di valutazione
+⚠️ *Tutti i κ sono il valore migliore trovato cercando la soglia ottimale sul set di valutazione stesso → sono stime ottimistiche (upper bound). Anche così, i cross-encoder non vincono.* **VERDETTO: NO.** Soglia non superata. **Si resta su MPNet @ 0.35.** Esperimento negativo, documentato.
 
-stesso → sono stime ottimistiche (upper bound). Anche così, i cross-encoder non vincono.*
+**Perché è un risultato interessante (per la relazione):** l'ipotesi era che il difetto fosse **architetturale** (bivs cross-encoding). È **falsa**: il cross-encoder sbaglia *sugli stessi identici casi*. Il difetto è nell'**obiettivo di addestramento**: MS MARCO addestra alla *rilevanza topica* ("questo testo parla di questo argomento?") — e per un post sul Villarreal e un contratto sul Villarreal la risposta è correttamente *sì*. Nessuno di questi modelli sa cercare *"questo testo dice qualcosa su questa specifica affermazione"*.
 
-**VERDETTO: NO.** Soglia non superata. **Si resta su MPNet @ 0.35.** Esperimento negativo, documentato.
+I due modelli di **entailment** falliscono in direzioni opposte, il che conferma la diagnosi: `qnli` rifiuta quasi tutto (recall 0.11 — chiede "il passaggio contiene la risposta?", e un post social non risponde mai a "vincerà il Villarreal?"); `nli-deberta` accetta quasi tutto (recall 0.97, precision 0.54 ≈ base rate). Causa comune: **una domanda non è un'ipotesi dichiarativa**, quindi l'entailment non è definito.
 
-**Perché è un risultato interessante (per la relazione):** l'ipotesi era che il difetto fosse
-
-**architetturale** (bivs cross-encoding). È **falsa**: il cross-encoder sbaglia *sugli stessi
-
-identici casi*. Il difetto è nell'**obiettivo di addestramento**: MS MARCO addestra alla *rilevanza
-
-topica* ("questo testo parla di questo argomento?") — e per un post sul Villarreal e un contratto sul
-
-Villarreal la risposta è correttamente *sì*. Nessuno di questi modelli sa cercare *"questo testo
-
-dice qualcosa su questa specifica affermazione"*.
-
-I due modelli di **entailment** falliscono in direzioni opposte, il che conferma la diagnosi:
-
-`qnli` rifiuta quasi tutto (recall 0.11 — chiede "il passaggio contiene la risposta?", e un post
-
-social non risponde mai a "vincerà il Villarreal?"); `nli-deberta` accetta quasi tutto (recall 0.97,
-
-precision 0.54 ≈ base rate). Causa comune: **una domanda non è un'ipotesi dichiarativa**, quindi
-
-l'entailment non è definito.
-
-**Prossime mosse possibili (non fatte, per tempo):** (a) riformulare la question in ipotesi
-
-dichiarativa prima dell'NLI; (b) distillare il giudizio LLM in un classificatore piccolo;
-
-(c) fine-tuning di un cross-encoder sulle etichette del giudice (servirebbero >200 coppie).
+**Prossime mosse possibili (non fatte, per tempo):** (a) riformulare la question in ipotesi dichiarativa prima dell'NLI; (b) distillare il giudizio LLM in un classificatore piccolo; (c) fine-tuning di un cross-encoder sulle etichette del giudice (servirebbero >200 coppie).
 
 ---
 
 ### [2026-07-14] Perché non Spark: DuckDB è 100× più veloce sul nostro dataset (misurato)
 
-**Contesto:** la traccia elenca Spark tra i tool suggeriti ("for scalable preprocessing of **large-scale**
-
-datasets"). Il nostro dataset è piccolo (decine di MB). Invece di asserire "Spark è overkill", l'abbiamo
-
-**misurato**: `pipeline/spark_benchmark.py` esegue la STESSA aggregazione (post per contratto-giorno + prezzo
-
-giornaliero — l'input dell'analisi lead/lag) in DuckDB e PySpark, su dati replicati ×1/×10/×50/×200.
+**Contesto:** la traccia elenca Spark tra i tool suggeriti ("for scalable preprocessing of **large-scale** datasets"). Il nostro dataset è piccolo (decine di MB). Invece di asserire "Spark è overkill", l'abbiamo **misurato**: `pipeline/spark_benchmark.py` esegue la STESSA aggregazione (post per contratto-giorno + prezzo giornaliero — l'input dell'analisi lead/lag) in DuckDB e PySpark, su dati replicati ×1/×10/×50/×200.
 
 | Scala | Righe | DuckDB | Spark | Spark più lento |
 |---|---|---|---|---|
@@ -307,53 +253,27 @@ giornaliero — l'input dell'analisi lead/lag) in DuckDB e PySpark, su dati repl
 | 50× | 3.203.100 | 0,35s | 2,69s | 7,7× |
 | 200× | 12.812.400 | 1,03s | 4,88s | 4,8× |
 
-**Lettura:** sui dati reali DuckDB è **~100× più veloce**. Il divario si restringe con la scala (l'overhead
+**Lettura:** sui dati reali DuckDB è **~100× più veloce**. Il divario si restringe con la scala (l'overhead fisso JVM/scheduling/serializzazione di Spark si ammortizza), ma anche a 12,8M di righe Spark resta 5× più lento. Estrapolando, il pareggio è nell'ordine di **10⁸ righe** — cioè quando i dati non stanno più in una macchina, lo scenario per cui Spark esiste. Verificato che i due motori producano lo **stesso risultato** (assert nel bench).
 
-fisso JVM/scheduling/serializzazione di Spark si ammortizza), ma anche a 12,8M di righe Spark resta 5× più lento.
-
-Estrapolando, il pareggio è nell'ordine di **10⁸ righe** — cioè quando i dati non stanno più in una macchina,
-
-lo scenario per cui Spark esiste. Verificato che i due motori producano lo **stesso risultato** (assert nel bench).
-
-**Scelta:** DuckDB per l'intero progetto. **Risposta all'orale a "perché non Spark?":** non è un limite ma
-
-una scelta dimensionata al dato — "big" è una proprietà del dataset, non un aggettivo. Materiale forte per *Design choices*.
+**Scelta:** DuckDB per l'intero progetto. **Risposta all'orale a "perché non Spark?":** non è un limite ma una scelta dimensionata al dato — "big" è una proprietà del dataset, non un aggettivo. Materiale forte per *Design choices*.
 
 ---
 
 ### [2026-07-14] RISULTATO CENTRALE: i social INSEGUONO il mercato (lag +1 giorno)
 
-**Analisi** (`pipeline/correlation.py`): correlazione fra **|variazione giornaliera di prezzo|** e
-
-**volume di post** linkati (MPNet ≥0.35, solo EN), con la serie social sfasata di -7..+7 giorni.
-
-99 contratti con dati sufficienti (≥20 giorni, ≥20 post).
+**Analisi** (`pipeline/correlation.py`): correlazione fra **|variazione giornaliera di prezzo|** e **volume di post** linkati (MPNet ≥0.35, solo EN), con la serie social sfasata di -7..+7 giorni. 99 contratti con dati sufficienti (≥20 giorni, ≥20 post).
 
 **Risultato:** picco di correlazione a **lag +1 giorno**, in TUTTI e 3 i domini
 
-(finance r=0,136 | sport r=0,106 | politics r=0,075). La curva è ~0 per lag negativi (social in anticipo),
+(finance r=0,136 | sport r=0,106 | politics r=0,075). La curva è ~0 per lag negativi (social in anticipo), sale fino a lag 0, massimo a +1, poi decade → profilo classico di un segnale **reattivo**.
 
-sale fino a lag 0, massimo a +1, poi decade → profilo classico di un segnale **reattivo**.
+**Interpretazione (risposta alla domanda di ricerca del progetto):** il discorso social sui prediction market è **reattivo, non predittivo** — la gente commenta il giorno DOPO che la notizia ha già mosso il prezzo. Coerente con il risultato #1 (mercato già calibrato mesi prima → poco spazio per anticiparlo).
 
-**Interpretazione (risposta alla domanda di ricerca del progetto):** il discorso social sui prediction
-
-market è **reattivo, non predittivo** — la gente commenta il giorno DOPO che la notizia ha già mosso il
-
-prezzo. Coerente con il risultato #1 (mercato già calibrato mesi prima → poco spazio per anticiparlo).
-
-**Onestà per la relazione:** le correlazioni sono **deboli in assoluto** (0,07-0,14). Il segnale è
-
-consistente in segno e timing su tutti i domini, ma modesto: non c'è forte legame lineare volume↔movimenti.
-
-Questo È un risultato, non un fallimento — ed è il tipo di conclusione misurata che vale più di un "sì" forzato.
+**Onestà per la relazione:** le correlazioni sono **deboli in assoluto** (0,07-0,14). Il segnale è consistente in segno e timing su tutti i domini, ma modesto: non c'è forte legame lineare volume↔movimenti. Questo È un risultato, non un fallimento — ed è il tipo di conclusione misurata che vale più di un "sì" forzato.
 
 ### [2026-07-15] Task 3: cutoff 7 giorni + CV temporale — il social non aggiunge nulla al prezzo
 
-**Decisione.** Task 3 (opzionale) implementato come confronto controllato di feature set —
-
-SOCIAL / PRICE / COMBINED / LINGUISTIC (TF-IDF) — sugli stessi 210 contratti binari e gli stessi
-
-5 fold walk-forward (TimeSeriesSplit su contratti ordinati per data di risoluzione).
+**Decisione.** Task 3 (opzionale) implementato come confronto controllato di feature set — SOCIAL / PRICE / COMBINED / LINGUISTIC (TF-IDF) — sugli stessi 210 contratti binari e gli stessi 5 fold walk-forward (TimeSeriesSplit su contratti ordinati per data di risoluzione).
 
 **Le due scelte che rendono l'esperimento credibile:**
 
@@ -363,10 +283,4 @@ SOCIAL / PRICE / COMBINED / LINGUISTIC (TF-IDF) — sugli stessi 210 contratti b
 2. **Ipotesi pre-registrata** (da §7.1: il mercato è calibrato mesi prima): il prezzo dominerà;
    il numero interessante è se COMBINED > PRICE.
 
-**Risultato (misurato).** Social AUC 0,56-0,60, TF-IDF 0,705, prezzo 0,980, combinato 0,953:
-
-il social batte il caso ma non la baseline di maggioranza (0,748 accuracy), e NON aggiunge nulla
-
-al prezzo. Coerente con lead/lag (+1 giorno): il mercato ha già scontato il discorso social.
-
-Risultati in `data/processed/prediction_results.json`, codice `pipeline/predict.py`.
+**Risultato (misurato).** Social AUC 0,56-0,60, TF-IDF 0,705, prezzo 0,980, combinato 0,953: il social batte il caso ma non la baseline di maggioranza (0,748 accuracy), e NON aggiunge nulla al prezzo. Coerente con lead/lag (+1 giorno): il mercato ha già scontato il discorso social. Risultati in `data/processed/prediction_results.json`, codice `pipeline/predict.py`.
