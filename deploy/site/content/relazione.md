@@ -162,7 +162,7 @@ documentato come limite di piattaforma.
 
 | | Reddit | Bluesky | Telegram |
 |---|---|---|---|
-| Copertura contratti (raccolta) | **89%** (domini bilanciati) | 97% (dominato dallo sport) | 48% (zero sport) |
+| Copertura contratti (raccolta) | **89%** (domini bilanciati) | 97% (sport quasi completo) | 48% (sport assente) |
 | Copertura dopo il filtro semantico | 86% | 90% | 40% |
 | Rappresentatività | discussione tematica per subreddit | utenti early-adopter | 9 canali news EN, non gli utenti |
 | Campionamento | search per keyword (sort relevance) | search per keyword | storia completa dei canali scelti |
