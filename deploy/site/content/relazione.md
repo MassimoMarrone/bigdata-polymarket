@@ -127,6 +127,8 @@ flowchart TB
 
 Contratti risolti e serie storiche di prezzo dalla Gamma API e dalla CLOB API. **420 contratti** risolti raccolti (≥130 per dominio); un filtro di qualità a valle (≥10 snapshot di prezzo — un contratto con 2 punti non può sostenere un'analisi lead/lag) ne promuove **380 al livello analitico** (130 finance / 127 politics / 123 sports — il minimo di 100 per dominio resta ampiamente rispettato), con **95.094 snapshot** di prezzo giornalieri.
 
+Un campo dello schema della traccia manca, e va detto: il **volume per singolo snapshot**. L'endpoint `prices-history` della CLOB restituisce solo `t` (timestamp) e `p` (prezzo) — il volume per punto non è esposto da nessun endpoint pubblico. La traccia lo chiede "*where available*", e non lo è: resta il **volume cumulato del contratto**, raccolto dalla Gamma API e presente in `contracts.parquet` (usato per il campionamento in §3.2 e per l'ordinamento nella dashboard). Tutti gli altri campi dello schema di Sezione 2 sono presenti: 9/9 sui contratti, 21/21 sui post.
+
 Una scelta di campionamento si è rivelata critica. Ordinando i mercati per volume di scambi, i primi N appartenevano a pochissimi *eventi*: un evento Polymarket contiene decine di *mercati* quasi identici (37 mercati "chi nominerà Trump alla Fed?" — uno per candidato; 39 mercati sul prezzo del petrolio WTI — uno per soglia). Il primo campione aveva 356 contratti ma **solo 15 argomenti reali**, il che avrebbe reso impossibile il linking (mercati diversi generano le stesse parole chiave) e statisticamente vuota l'analisi di correlazione. Si è imposto un **tetto di 3 mercati per evento**, portando la diversità tematica da 15 a **129 eventi distinti**.
 
 #### 3.3 Raccolta social
