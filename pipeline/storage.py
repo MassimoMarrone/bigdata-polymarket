@@ -71,6 +71,12 @@ def posts() -> pd.DataFrame:
     if not tg.empty:
         tg["hashtags"] = "[]"
         frames.append(tg)
+    # Reddit: come Bluesky, i post portano gia' market_id (linked in reddit_collect.py)
+    rdt = _read(RAW / "reddit" / "posts.jsonl")
+    if not rdt.empty:
+        rdt["hashtags"] = rdt["hashtags"].apply(
+            lambda h: json.dumps(h) if not isinstance(h, str) else h)
+        frames.append(rdt)
     if not frames:
         return pd.DataFrame()
 
@@ -108,7 +114,12 @@ def _extra_fields(df: pd.DataFrame) -> pd.DataFrame:
     else:
         df["author_followers"] = None
 
-    comments = _read(RAW / "bluesky" / "comments.jsonl")
+    # Commenti di entrambe le piattaforme che li espongono (Bluesky + Reddit),
+    # stessa forma (parent_post_id, text, author_id, published_at, like_count).
+    cframes = [_read(RAW / "bluesky" / "comments.jsonl"),
+               _read(RAW / "reddit" / "comments.jsonl")]
+    cframes = [c for c in cframes if not c.empty]
+    comments = pd.concat(cframes, ignore_index=True) if cframes else pd.DataFrame()
     if not comments.empty:
         comments = comments[comments["text"].fillna("") != ""]
         sample = (comments.groupby("parent_post_id")

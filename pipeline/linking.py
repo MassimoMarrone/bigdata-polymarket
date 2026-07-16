@@ -25,6 +25,7 @@ PROC = Path(__file__).resolve().parents[1] / "data" / "processed"
 CONTRACTS = RAW / "polymarket" / "contracts.jsonl"
 POSTS = RAW / "bluesky" / "posts.jsonl"
 TELEGRAM = RAW / "telegram" / "linked.jsonl"
+REDDIT = RAW / "reddit" / "posts.jsonl"
 
 MODELS = {
     "minilm": "sentence-transformers/all-MiniLM-L6-v2",       # fast baseline
@@ -51,13 +52,14 @@ def env(key: str) -> str | None:
 def load() -> tuple[dict[str, dict], list[dict]]:
     """Contracts, and every (post, contract) candidate from both platforms.
 
-    Both files are already keyword-linked — Bluesky server-side at collection,
-    Telegram locally in link_telegram.py — so the semantic filter below sees the
-    same kind of input from each, which is the point.
+    All files are already keyword-linked — Bluesky server-side at collection,
+    Telegram locally in link_telegram.py, Reddit by search query in
+    reddit_collect.py — so the semantic filter below sees the same kind of input
+    from each, which is the point.
     """
     contracts = {c["market_id"]: c for c in map(json.loads, CONTRACTS.open())}
     posts: list[dict] = []
-    for path in (POSTS, TELEGRAM):
+    for path in (POSTS, TELEGRAM, REDDIT):
         if path.exists():
             posts.extend(json.loads(line) for line in path.open())
     # A contract may have been dropped by a re-collection; its posts are stale.

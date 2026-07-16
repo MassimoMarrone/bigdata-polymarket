@@ -25,7 +25,8 @@ BATCH = 64
 def unique_posts() -> list[dict]:
     seen: set[str] = set()
     posts: list[dict] = []
-    for path in (RAW / "bluesky" / "posts.jsonl", RAW / "telegram" / "linked.jsonl"):
+    for path in (RAW / "bluesky" / "posts.jsonl", RAW / "telegram" / "linked.jsonl",
+                 RAW / "reddit" / "posts.jsonl"):
         if not path.exists():
             continue
         for line in path.open():
