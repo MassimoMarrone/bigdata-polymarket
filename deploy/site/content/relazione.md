@@ -91,7 +91,6 @@ cosa che non si può rigenerare (le API cambiano, i post spariscono) ed è per q
 
 ```mermaid
 flowchart TB
-  %% dichiarati al contrario: in TB mermaid li dispone da destra a sinistra
   TG["<b>Telegram</b><br/>Telethon · 9 canali"]
   BS["<b>Bluesky</b><br/>AT Protocol"]
   RD["<b>Reddit</b><br/>search.json · Scrapfly"]
@@ -206,8 +205,9 @@ flowchart TB
   E -.->|"campiona"| J --> K
   K -.->|"calibra la soglia"| D
 
-  style J fill:#2A2418,stroke:#E0B15C,color:#E8ECF4
-  style K fill:#2A2418,stroke:#E0B15C,color:#E8ECF4
+  %% solo il bordo: il riempimento lo decide il tema (scuro sul sito, chiaro nel PDF)
+  style J stroke:#E0B15C,stroke-width:2.5px
+  style K stroke:#E0B15C,stroke-width:2.5px
 ```
 
 #### 4.1 Calibrazione e ablazione dei modelli
