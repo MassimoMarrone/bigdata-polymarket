@@ -25,8 +25,8 @@ from views import contratti, discorso, esplora, piattaforme, predizione, segnale
 st.set_page_config(page_title="Polymarket × Social", layout="wide")
 
 st.title("Segnali social e mercati predittivi")
-st.caption("Polymarket come ground truth · Bluesky e Telegram come discorso pubblico · "
-           "linking semantico validato con giudice LLM (κ=0.43)")
+st.caption("Polymarket come ground truth · Reddit, Bluesky e Telegram come discorso pubblico · "
+           "linking semantico validato con giudice LLM (κ=0.43 Bluesky+Telegram, 0.50 Reddit)")
 
 VIEWS = {
     "1 · Contratti (Task 2.1)": contratti,

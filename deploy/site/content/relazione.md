@@ -45,6 +45,10 @@ percorribile, indicata dal docente, è lo **scraping tramite proxy residenziale 
 supera il 403. Con questo metodo si è raccolto per keyword della domanda del contratto, nella
 finestra creazione→risoluzione: **6.491 post su 340/380 contratti (89% di copertura)**, la più
 alta delle tre piattaforme, con un campione di commenti (17.969) e i follower/karma degli autori.
+Due numeri diversi, entrambi veri, che conviene tenere distinti: 89% è la copertura *raccolta*
+(contratti con almeno un post trovato); dopo il filtro semantico di §4 restano **328/380 contratti
+(86%) e 4.592 post** — è questa la copertura che alimenta l'analisi, ed è il numero che la
+dashboard mostra.
 
 **X/Twitter — genuinamente inaccessibile, sostituito con Bluesky.** X è l'unica piattaforma
 davvero irraggiungibile, e su tre fronti indipendenti: (1) l'API a pagamento parte da **~$42.000/mese**
@@ -135,9 +139,12 @@ Una scelta di campionamento si è rivelata critica. Ordinando i mercati per volu
   follower/karma di 2.966 autori (seconda passata su `/user/about.json`).
 - **Bluesky** — ricerca per parole chiave estratte dalla domanda del contratto, ristretta alla
   finestra di vita del contratto, con paginazione autenticata (app password) e un fallback che
-  accorcia la query quando è troppo restrittiva. ~48.000 post, copertura dell'82% dei contratti.
+  accorcia la query quando è troppo restrittiva. **48.204 post, 97% dei contratti** (90% dopo il
+  filtro semantico).
 - **Telegram** — si è scaricata la **storia completa** di 9 canali pubblici (news broadcaster)
-  nella finestra temporale (111.122 messaggi) e li si è linkati offline.
+  nella finestra temporale (111.122 messaggi) e li si è linkati offline: ne restano **7.153
+  messaggi su 48% dei contratti** (40% dopo il filtro). È la piattaforma più sparsa: i canali
+  news coprono ciò di cui *loro* parlano, non i nostri contratti.
 
 Su tutte e tre le piattaforme il *linking* usa lo **stesso metodo** (keyword → filtro semantico):
 è ciò che rende interpretabile il confronto cross-platform — ogni differenza osservata è una
@@ -155,7 +162,8 @@ documentato come limite di piattaforma.
 
 | | Reddit | Bluesky | Telegram |
 |---|---|---|---|
-| Copertura contratti | **89%** (domini bilanciati) | 82% (dominato dallo sport) | 31% (zero sport) |
+| Copertura contratti (raccolta) | **89%** (domini bilanciati) | 97% (dominato dallo sport) | 48% (zero sport) |
+| Copertura dopo il filtro semantico | 86% | 90% | 40% |
 | Rappresentatività | discussione tematica per subreddit | utenti early-adopter | 9 canali news EN, non gli utenti |
 | Campionamento | search per keyword (sort relevance) | search per keyword | storia completa dei canali scelti |
 | Engagement | upvote + n. commenti | like/reply/repost | solo visualizzazioni |
@@ -283,17 +291,17 @@ Il mercato prezza correttamente i perdenti (~0,08) fin dall'inizio ed è ben cal
 Le tre piattaforme sono specializzate in modo **complementare** — copertura per dominio
 (contratti con ≥1 post linkato):
 
-| Piattaforma | Politics | Finance | Sport | Profilo |
+| Piattaforma | Politics (su 127) | Finance (su 130) | Sport (su 123) | Profilo |
 |---|---|---|---|---|
-| **Reddit** | 117 | 101 | 110 | **bilanciata su tutti i domini** |
-| Bluesky | 123 | 101 | **157** | dominata dallo sport, discorso utenti |
-| Telegram | 73 | 77 | **6** | politica/finanza, quasi zero sport |
+| **Reddit** | 117 (92%) | 101 (78%) | 110 (89%) | **bilanciata su tutti i domini** |
+| Bluesky | 120 (94%) | 101 (78%) | **122 (99%)** | copre quasi tutto lo sport, discorso utenti |
+| Telegram | 70 (55%) | 77 (59%) | **5 (4%)** | politica/finanza, sport praticamente assente |
 
 L'asimmetria è la risposta al Task 2.4: quale piattaforma è più informativa dipende dal dominio,
 ed è una proprietà **strutturale**, non un artefatto della raccolta (lo stesso metodo di linking
-gira su tutte e tre). Reddit è la piattaforma più equilibrata e in questo senso *riempie i buchi*
-delle altre due: dove Telegram è assente (sport) e Bluesky sbilanciato, Reddit dà copertura
-uniforme. Su Telegram si erano verificati e scartati 12 canali sportivi alternativi — non esiste
+gira su tutte e tre). Il contrasto forte è sullo sport: Bluesky lo copre quasi tutto (99%),
+Telegram praticamente per niente (4%) — 24 volte meno, a parità di metodo. Reddit è la più
+equilibrata e in questo senso *riempie i buchi*: dove Telegram è assente, dà comunque l'89%. Su Telegram si erano verificati e scartati 12 canali sportivi alternativi — non esiste
 un canale pubblico EN con storico sportivo denso; con Reddit lo sport rientra nel dataset.
 
 #### 7.3 Correlazione segnale-mercato (Task 2.3): i social inseguono
@@ -323,7 +331,7 @@ anticipatorio, r=0,071). Il *tipo* di piattaforma sembra contare: la discussione
 (Bluesky) ha un piccolo anticipo, i thread di discussione (Reddit) reagiscono. È una lettura
 coerente ma va data con cautela — le correlazioni sono deboli e la differenza Bluesky −1 vs +1 è
 piccola. Telegram è troppo sparso per un profilo temporale affidabile (picco a +6, quasi certamente
-rumore): un limite dovuto alla copertura del 31%, non un segnale.
+rumore): un limite dovuto alla copertura del 40%, non un segnale.
 
 **Conclusione.** Il discorso social sui prediction market **commenta il mercato il giorno dopo**,
 non lo anticipa (il pattern reattivo domina, confermato su tre piattaforme). Onestamente, le

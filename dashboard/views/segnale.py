@@ -35,7 +35,7 @@ def render(where: str) -> None:
                "(picco a lag positivo); Bluesky ha un leggero anticipo (lag −1) — la "
                "discussione fra utenti precede un filo, i thread e i broadcast reagiscono. "
                "Segnali deboli (r~0.07): un'osservazione, non un risultato forte. Telegram "
-               "è sparso (coverage 31%) e la sua curva è rumorosa.")
+               "è sparso (coverage 40%) e la sua curva è rumorosa.")
     llp = query("SELECT platform, lag, r FROM leadlag_platform WHERE lag BETWEEN -7 AND 7")
     fig2 = px.line(llp, x="lag", y="r", color="platform", markers=True,
                    labels={"lag": "sfasamento (giorni)", "r": "correlazione media"},
