@@ -30,6 +30,19 @@ def render(where: str) -> None:
     fig.add_vline(x=0, line_dash="dash", line_color="gray")
     st.plotly_chart(fig, width='stretch')
 
+    st.subheader("Le piattaforme reagiscono allo stesso modo?")
+    st.caption("Lo stesso lead/lag, ma per piattaforma. Reddit e Telegram inseguono "
+               "(picco a lag positivo); Bluesky ha un leggero anticipo (lag −1) — la "
+               "discussione fra utenti precede un filo, i thread e i broadcast reagiscono. "
+               "Segnali deboli (r~0.07): un'osservazione, non un risultato forte. Telegram "
+               "è sparso (coverage 31%) e la sua curva è rumorosa.")
+    llp = query("SELECT platform, lag, r FROM leadlag_platform WHERE lag BETWEEN -7 AND 7")
+    fig2 = px.line(llp, x="lag", y="r", color="platform", markers=True,
+                   labels={"lag": "sfasamento (giorni)", "r": "correlazione media"},
+                   title="Volume ~ |Δprezzo| per piattaforma (lag>0 = insegue)")
+    fig2.add_vline(x=0, line_dash="dash", line_color="gray")
+    st.plotly_chart(fig2, width='stretch')
+
     st.subheader("E la direzione del sentiment?")
     st.caption("La traccia chiede se la direzione del sentiment è allineata alla "
                "direzione del prezzo. Risposta misurata: no — la correlazione firmata "

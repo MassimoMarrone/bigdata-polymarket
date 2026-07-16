@@ -22,7 +22,8 @@ THRESHOLD = 0.35  # MPNet cosine, calibrated against the judge (Decisioni.md)
 @st.cache_resource
 def connect() -> duckdb.DuckDBPyConnection:
     con = duckdb.connect()
-    for name in ("contracts", "prices", "posts", "leadlag", "sentiment_direction"):
+    for name in ("contracts", "prices", "posts", "leadlag", "leadlag_platform",
+                 "sentiment_direction"):
         f = PROC / f"{name}.parquet"
         if f.exists():
             con.execute(f"CREATE VIEW {name} AS SELECT * FROM read_parquet('{f}')")

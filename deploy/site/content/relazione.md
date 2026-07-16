@@ -326,15 +326,21 @@ invece di forzare un allineamento, è parte del risultato: **è il volume del di
 
 movimenti, non la sua polarità a predirli.**
 
+**Le piattaforme non sono intercambiabili (osservazione).** Scomponendo il lead/lag *per
+piattaforma* (`correlation_platform.py`) emerge un contrasto tra le due piattaforme ricche di
+dati: **Reddit** picca a **lag +1** (reattivo, r=0,073), **Bluesky** a **lag −1** (leggermente
+anticipatorio, r=0,071). Il *tipo* di piattaforma sembra contare: la discussione *fra utenti*
+(Bluesky) ha un piccolo anticipo, i thread di discussione (Reddit) reagiscono. È una lettura
+coerente ma va data con cautela — le correlazioni sono deboli e la differenza Bluesky −1 vs +1 è
+piccola. Telegram è troppo sparso per un profilo temporale affidabile (picco a +6, quasi certamente
+rumore): un limite dovuto alla copertura del 31%, non un segnale.
+
 **Conclusione.** Il discorso social sui prediction market **commenta il mercato il giorno dopo**,
-
-non lo anticipa. Onestamente, le correlazioni sono deboli in valore assoluto (0,10-0,13): il segnale
-
-è consistente in segno e tempistica, ma modesto — non c'è un forte legame lineare volume↔movimenti.
-
-Questo è un risultato, non un fallimento: coerente con §7.1 (un mercato già efficiente lascia poco
-
-spazio a un segnale esterno).
+non lo anticipa (il pattern reattivo domina, confermato su tre piattaforme). Onestamente, le
+correlazioni sono deboli in valore assoluto (0,10-0,14): il segnale è consistente in segno e
+tempistica, ma modesto — non c'è un forte legame lineare volume↔movimenti. Questo è un risultato,
+non un fallimento: coerente con §7.1 (un mercato già efficiente lascia poco spazio a un segnale
+esterno).
 
 ---
 
