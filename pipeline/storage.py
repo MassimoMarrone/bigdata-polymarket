@@ -107,10 +107,13 @@ def _extra_fields(df: pd.DataFrame) -> pd.DataFrame:
     else:
         df["mentioned_entities"] = None
 
-    authors = _read(RAW / "bluesky" / "authors.jsonl")
+    aframes = [_read(RAW / "bluesky" / "authors.jsonl"),
+               _read(RAW / "reddit" / "authors.jsonl")]
+    aframes = [a[["author_id", "author_followers"]] for a in aframes if not a.empty]
+    authors = pd.concat(aframes, ignore_index=True) if aframes else pd.DataFrame()
     if not authors.empty:
-        df = df.merge(authors[["author_id", "author_followers"]]
-                      .drop_duplicates("author_id"), on="author_id", how="left")
+        df = df.merge(authors.dropna(subset=["author_id"]).drop_duplicates("author_id"),
+                      on="author_id", how="left")
     else:
         df["author_followers"] = None
 
