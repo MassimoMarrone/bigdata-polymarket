@@ -67,26 +67,31 @@ def render(where: str) -> None:
                        width='stretch')
 
     st.subheader("Engagement")
-    st.caption("Ogni piattaforma misura l'engagement a modo suo: Bluesky like/repost "
-               "per post di utenti, Telegram visualizzazioni di canali broadcast. "
+    st.caption("Ogni piattaforma misura l'engagement a modo suo: Reddit upvote+commenti, "
+               "Bluesky like/reply/repost, Telegram visualizzazioni di canali broadcast. "
                "Scala log: la distribuzione è a coda lunga.")
-    left, right = st.columns(2)
+    c1, c2, c3 = st.columns(3)
+    rdt = query(f"""
+        SELECT category, coalesce(like_count,0) + coalesce(reply_count,0) AS engagement
+        FROM linked WHERE {where} AND platform = 'reddit'
+    """)
+    c1.plotly_chart(px.box(rdt, x="category", y="engagement", color="category",
+                           log_y=True, title="Reddit: upvote+commenti per post (log)"),
+                    width='stretch')
     eng = query(f"""
-        SELECT platform, category, like_count + reply_count + repost_count AS engagement
+        SELECT category, like_count + reply_count + repost_count AS engagement
         FROM linked WHERE {where} AND platform = 'bluesky'
     """)
-    left.plotly_chart(px.box(eng, x="category", y="engagement", color="category",
-                             log_y=True,
-                             title="Bluesky: like+reply+repost per post (log)"),
-                      width='stretch')
+    c2.plotly_chart(px.box(eng, x="category", y="engagement", color="category",
+                           log_y=True, title="Bluesky: like+reply+repost (log)"),
+                    width='stretch')
     views = query(f"""
         SELECT category, view_count FROM linked
         WHERE {where} AND platform = 'telegram' AND view_count > 0
     """)
-    right.plotly_chart(px.box(views, x="category", y="view_count", color="category",
-                              log_y=True,
-                              title="Telegram: visualizzazioni per messaggio (log)"),
-                       width='stretch')
+    c3.plotly_chart(px.box(views, x="category", y="view_count", color="category",
+                           log_y=True, title="Telegram: visualizzazioni (log)"),
+                    width='stretch')
 
     st.subheader("Entità più citate (NER)")
     st.caption("Le entità estratte con spaCy dai post linkati: una verifica qualitativa "

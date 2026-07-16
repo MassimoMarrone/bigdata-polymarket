@@ -43,41 +43,39 @@ prediction, §8) completi.
 
 ### 2. Le fonti dati e una scelta obbligata sulle piattaforme
 
-La traccia indica tre piattaforme social: **Reddit, X (Twitter), Telegram**. Due si sono rivelate
+La traccia indica tre piattaforme social: **Reddit, X (Twitter), Telegram**. Il dataset finale ne
+usa **tre — Reddit, Telegram e Bluesky** — dove Bluesky sostituisce X. Ogni scelta di accesso è
+stata verificata empiricamente, non assunta.
 
-inaccessibili, per ragioni tecniche documentabili e non aggirabili in modo lecito:
+**Reddit — raccolto via scraping (metodo indicato dal corso).** L'accesso a Reddit non è banale e
+va documentato con onestà. L'API ufficiale non è più disponibile in self-service: la registrazione
+di un'app *script* su `reddit.com/prefs/apps` non si completa (dopo le restrizioni di fine 2025
+l'account viene reindirizzato al modulo di approvazione della *Responsible Builder Policy*), e
+l'endpoint pubblico `.json` risponde **HTTP 403** a ogni richiesta da script, anche con user-agent
+di browser (blocco anti-bot alla prima chiamata, non un rate-limit — verificato sui log). La via
+percorribile, indicata dal docente, è lo **scraping tramite proxy residenziale (Scrapfly)**, che
+supera il 403. Con questo metodo si è raccolto per keyword della domanda del contratto, nella
+finestra creazione→risoluzione: **6.491 post su 340/380 contratti (89% di copertura)**, la più
+alta delle tre piattaforme, con un campione di commenti (17.969) e i follower/karma degli autori.
 
-- **X/Twitter** — API a pagamento, fuori dalla portata di un progetto universitario.
-- **Reddit** — inaccessibile in modo gratuito *e* lecito. La conclusione non è un'assunzione: sono
-  state verificate empiricamente tutte e quattro le vie di accesso.
+**X/Twitter — genuinamente inaccessibile, sostituito con Bluesky.** X è l'unica piattaforma
+davvero irraggiungibile, e su tre fronti indipendenti: (1) l'API a pagamento parte da **~$42.000/mese**
+(full-archive search *Enterprise-only*, verificato 2026); (2) la ricerca web è **dietro login dal
+2023** — un probe di scraping sulla pagina di ricerca restituisce **0 tweet** e la pagina di
+fallback "JavaScript is not available", perché i risultati caricano via GraphQL autenticato; (3)
+gli scraper disponibili espongono solo *tweet-da-URL* e *profilo* (metadati, nessun timeline di
+post), quindi non c'è modo di recuperare tweet a tema per il linking. Al suo posto si usa
+**Bluesky**: stessa nicchia (discorso testuale short-form in tempo reale), API pubblica
+(`api.bsky.app`) con ricerca full-text storica. Un probe su 12 contratti ha dato 10/12 con ≥5 post
+pertinenti (media 65 post/contratto) prima di impegnarsi sull'intero dataset.
 
-  | Via di accesso | Esito verificato |
-  |---|---|
-  | API ufficiale (PRAW) | registrazione di un'app *script* su `reddit.com/prefs/apps` non completabile: dopo la rimozione della creazione self-service delle chiavi (fine 2025) l'account viene reindirizzato a Devvit / al modulo di approvazione della *Responsible Builder Policy*, che per progetti piccoli è di norma respinto |
-  | Endpoint pubblico `.json` da script | **HTTP 403** a ogni richiesta, anche con user-agent di browser (il blocco anti-bot scatta alla prima chiamata, non è un rate-limit) |
-  | Session cookie autenticati | tecnicamente possibile ma viola lo User Agreement e mette a rischio di sospensione l'account personale; scartato |
-  | Scraping via proxy commerciale (Scrapfly) | **funziona** (probe: 57/97 post pertinenti e in-finestra su un contratto del 2024) ma richiede proxy residenziale a pagamento (~25-32 crediti/richiesta, ordine di $30-100 per l'intero dataset) e opera aggirando la protezione anti-bot |
+**Telegram — API aperta.** Storia completa di 9 canali pubblici (news broadcaster), linkata
+offline (§3.3).
 
-  L'unica via lecita alla ricerca storica è *Reddit for Researchers*, che richiede affiliazione
-  istituzionale con Principal Investigator e approvazione di un comitato etico — non percorribile
-  nei tempi. Nessuna delle vie è al tempo stesso **gratuita, lecita e praticabile**, quindi Reddit
-  è escluso con motivazione documentata anziché con una raccolta di provenienza discutibile.
-
-**Sostituzione adottata: Bluesky al posto di X.** Bluesky occupa la stessa nicchia — discorso
-
-testuale, short-form, in tempo reale — e offre una API pubblica (`api.bsky.app`) con ricerca
-
-full-text storica. Un probe di fattibilità su 12 contratti ha dato 10/12 con ≥5 post pertinenti,
-
-media 65 post/contratto, confermando la copertura prima di impegnarsi sull'intero dataset.
-
-Il dataset finale usa dunque **Bluesky + Telegram**. Con due piattaforme il confronto
-
-cross-platform (Task 2.4) resta pienamente eseguibile — anzi, la loro specializzazione opposta
-
-(§7.2) lo rende più interessante.
-
-> 🔲 *Da fare insieme: decidere se accennare che la sostituzione è stata sottoposta al docente su Teams.*
+Il risultato è uno studio a **tre piattaforme** che copre l'enum della traccia (reddit ✓,
+telegram ✓) più Bluesky come sostituto motivato dell'unica genuinamente inaccessibile. E il
+confronto cross-platform (Task 2.4) ne esce arricchito: le tre hanno specializzazioni di dominio
+diverse e complementari (§7.2).
 
 ---
 
@@ -122,39 +120,39 @@ mercati per evento**, portando la diversità tematica da 15 a **129 eventi disti
 
 #### 3.3 Raccolta social
 
+- **Reddit** — ricerca per parole chiave della domanda del contratto (`search.json` via proxy
+  Scrapfly), ristretta alla finestra creazione→risoluzione. La ricerca restituisce già il testo del
+  post (titolo + selftext), quindi una richiesta per contratto rende ~100 post. **6.491 post, 89%
+  di copertura**, più un campione di **17.969 commenti** (thread dei top post per engagement) e i
+  follower/karma di 2.966 autori (seconda passata su `/user/about.json`).
 - **Bluesky** — ricerca per parole chiave estratte dalla domanda del contratto, ristretta alla
   finestra di vita del contratto, con paginazione autenticata (app password) e un fallback che
   accorcia la query quando è troppo restrittiva. ~48.000 post, copertura dell'82% dei contratti.
-- **Telegram** — a differenza di Bluesky, si è scaricata la **storia completa** di 9 canali pubblici
-  (news broadcaster) nella finestra temporale (111.122 messaggi) e li si è linkati offline. Questa
-  scelta è deliberata: usare lo *stesso* metodo di linking su entrambe le piattaforme è ciò che
-  rende interpretabile il confronto cross-platform — ogni differenza osservata è una proprietà
-  delle piattaforme, non dei due metodi.
+- **Telegram** — si è scaricata la **storia completa** di 9 canali pubblici (news broadcaster)
+  nella finestra temporale (111.122 messaggi) e li si è linkati offline.
+
+Su tutte e tre le piattaforme il *linking* usa lo **stesso metodo** (keyword → filtro semantico):
+è ciò che rende interpretabile il confronto cross-platform — ogni differenza osservata è una
+proprietà delle piattaforme, non del metodo.
 
 Lo schema della traccia chiede anche un *campione di reply/commenti* per post e i *follower*
-
 dell'autore "where available". La search di Bluesky non restituisce nessuno dei due, quindi una
-
-**seconda passata mirata** (`bluesky_extra.py`) li ha raccolti solo sui post effettivamente
-
-mantenuti dal filtro semantico: **4.565 commenti** (thread dei top post per engagement di ogni
-
-contratto) e **10.527 profili autore** con follower count. Per Telegram l'equivalente non esiste
-
-— i canali broadcast espongono le visualizzazioni ma non thread pubblici di commenti né una
-
-nozione di follower per autore (il canale *è* l'autore): documentato come limite di piattaforma.
+**seconda passata mirata** (`bluesky_extra.py`) li ha raccolti sui post mantenuti dal filtro
+semantico (**4.565 commenti**, **10.527 profili autore**); la stessa logica vale per Reddit
+(commenti + karma). Per Telegram l'equivalente non esiste — i canali broadcast espongono le
+visualizzazioni ma non thread pubblici di commenti né follower per autore (il canale *è* l'autore):
+documentato come limite di piattaforma.
 
 #### 3.4 Limiti dichiarati per piattaforma
 
-| | Bluesky | Telegram |
-|---|---|---|
-| Copertura contratti | 82% | 31% (zero sport) |
-| Rappresentatività | utenti early-adopter, non il "pubblico X" | 9 canali news EN, non il discorso degli utenti |
-| Campionamento | search per keyword → recall dipende dalla query | storia completa, ma solo dei canali scelti |
-| Engagement | like/reply/repost per post | solo visualizzazioni |
-| Commenti / follower | campione via seconda passata | non disponibili (broadcast) |
-| Sentiment | sui soli post EN (88%) | idem |
+| | Reddit | Bluesky | Telegram |
+|---|---|---|---|
+| Copertura contratti | **89%** (domini bilanciati) | 82% (dominato dallo sport) | 31% (zero sport) |
+| Rappresentatività | discussione tematica per subreddit | utenti early-adopter | 9 canali news EN, non gli utenti |
+| Campionamento | search per keyword (sort relevance) | search per keyword | storia completa dei canali scelti |
+| Engagement | upvote + n. commenti | like/reply/repost | solo visualizzazioni |
+| Commenti / follower | campione + karma (follower spesso 0) | campione + follower | non disponibili (broadcast) |
+| Sentiment | sui soli post EN | sui soli post EN (88%) | idem |
 
 ---
 
@@ -185,6 +183,11 @@ Confrontati due modelli di embedding contro il giudice (κ di Cohen come accordo
 | **MPNet** (`all-mpnet-base-v2`) | 0.35 | **0.434** | 0.69 | 0.85 |
 | MiniLM (`all-MiniLM-L6-v2`) | 0.45 | 0.410 | 0.72 | 0.70 |
 
+**Validazione su tutte e tre le piattaforme.** Il κ sopra è misurato su Bluesky+Telegram. Il
+linking è stato validato *separatamente* anche su Reddit, con lo stesso giudice su un campione
+stratificato di 200 coppie: **κ = 0.504** (moderate, fascia alta — leggermente superiore).
+Il metodo generalizza: non è calibrato su una piattaforma sola.
+
 **Scelta: MPNet @ 0.35** (accordo *moderato* nella scala di Landis-Koch). Recall alto preferito a
 
 precisione alta: i falsi positivi residui si diluiscono nell'aggregazione giornaliera, i falsi
@@ -209,14 +212,14 @@ topica*, e per un post sul Villarreal e un contratto sul Villarreal la risposta 
 
 ### 5. Preprocessing e arricchimento
 
-- **Rilevamento lingua** — non ci si fida del campo dichiarato (17.343 post Bluesky non lo hanno);
-  la lingua è rilevata. L'88% dei post è in inglese. I post non inglesi restano nel dataset (contano
-  per il *volume* di discussione) ma non ricevono sentiment (il modello è inglese): dargli un
-  punteggio sarebbe un numero privo di senso.
-- **Sentiment** — `cardiffnlp/twitter-roberta-base-sentiment-latest` su 35.872 post inglesi.
-  Distribuzione: 68% neutrale, 16% negativo, 16% positivo. Punteggio con segno, così una media
+- **Rilevamento lingua** — non ci si fida del campo dichiarato; la lingua è rilevata su tutti i
+  **45.623 post unici** (tre piattaforme). L'**88%** è in inglese. I post non inglesi restano nel
+  dataset (contano per il *volume* di discussione) ma non ricevono sentiment (il modello è inglese):
+  dargli un punteggio sarebbe un numero privo di senso.
+- **Sentiment** — `cardiffnlp/twitter-roberta-base-sentiment-latest` su **40.527 post inglesi**.
+  Distribuzione: 68% neutrale, 16% negativo, 15% positivo. Punteggio con segno, così una media
   giornaliera è direttamente interpretabile.
-- **NER** — spaCy su 32.222 post. Le entità più citate (US, Trump, Iran, Fed, NBA…) confermano
+- **NER** — spaCy su **36.497 post**. Le entità più citate (US, Trump, Iran, Fed, NBA…) confermano
   che il linking aggancia post effettivamente sul tema.
 - **Deduplicazione** — un post può legarsi a più contratti legittimamente ("vince il City?" e
   "vince l'Inter?" condividono i post), quindi l'unità è la coppia (post, contratto), non il post.
@@ -273,28 +276,32 @@ della risoluzione. Ne consegue che i social hanno poco spazio per "anticiparlo",
 
 domanda di ricerca dai *livelli* ai *movimenti* (§7.3).
 
-#### 7.2 Discorso e confronto cross-platform (Task 2.2 / 2.4): specializzazione asimmetrica
+#### 7.2 Discorso e confronto cross-platform (Task 2.2 / 2.4): specializzazione complementare
 
-Le due piattaforme sono specializzate in modo **opposto**:
+Le tre piattaforme sono specializzate in modo **complementare** — copertura per dominio
+(contratti con ≥1 post linkato):
 
-- **Bluesky** — dominato dallo **sport**, copre l'**82%** dei contratti. Discorso degli utenti.
-- **Telegram** — dominato da **politica e finanza**, copre il **31%**, quasi assente sullo sport
-  (verificati e scartati 12 canali sportivi alternativi: non esiste un canale pubblico in inglese
-  con storico sportivo denso). Flusso di notizie con engagement.
+| Piattaforma | Politics | Finance | Sport | Profilo |
+|---|---|---|---|---|
+| **Reddit** | 117 | 101 | 110 | **bilanciata su tutti i domini** |
+| Bluesky | 123 | 101 | **157** | dominata dallo sport, discorso utenti |
+| Telegram | 73 | 77 | **6** | politica/finanza, quasi zero sport |
 
-Questa asimmetria è la risposta al Task 2.4: quale piattaforma è più informativa dipende dal
-
-dominio, ed è una proprietà strutturale, non un artefatto della raccolta.
+L'asimmetria è la risposta al Task 2.4: quale piattaforma è più informativa dipende dal dominio,
+ed è una proprietà **strutturale**, non un artefatto della raccolta (lo stesso metodo di linking
+gira su tutte e tre). Reddit è la piattaforma più equilibrata e in questo senso *riempie i buchi*
+delle altre due: dove Telegram è assente (sport) e Bluesky sbilanciato, Reddit dà copertura
+uniforme. Su Telegram si erano verificati e scartati 12 canali sportivi alternativi — non esiste
+un canale pubblico EN con storico sportivo denso; con Reddit lo sport rientra nel dataset.
 
 #### 7.3 Correlazione segnale-mercato (Task 2.3): i social inseguono
 
-Correlando la **variazione** giornaliera di prezzo (non il livello) con il volume social, e
-
-sfasando le serie di ±7 giorni, il picco di correlazione è a **lag +1 giorno**, coerente su tutti
-
-e tre i domini (finance 0,105, politics 0,117, sport 0,130). La curva è piatta per lag negativi
-
-(social in anticipo), sale fino a +1 e decade: il profilo classico di un segnale **reattivo**.
+Correlando la **variazione** giornaliera di prezzo (non il livello) con il volume social (ora
+aggregato sulle tre piattaforme), e sfasando le serie di ±7 giorni, il picco di correlazione è a
+**lag +1 giorno, r = 0,14** — più netto rispetto alle due piattaforme sole (era 0,12), segno che
+l'aggiunta di Reddit rafforza il segnale invece di diluirlo. La curva è piatta per lag negativi
+(social in anticipo), sale fino a +1 e decade: il profilo classico di un segnale **reattivo**,
+coerente su tutti e tre i domini.
 
 **E la direzione del sentiment?** La traccia chiede esplicitamente se la *direzione* del sentiment
 
@@ -346,7 +353,8 @@ qualcosa.
 - **Anti-leakage per costruzione**: ogni feature (social E prezzo) è calcolata solo su dati
   antecedenti a *risoluzione − 7 giorni*. I post scritti quando l'esito è di fatto noto
   ("Trump ha nominato X", il giorno dopo la nomina) rivelerebbero l'etichetta.
-- **Unità**: contratti binari Yes/No con ≥5 post linkati pre-cutoff → **210 contratti** (25% Yes).
+- **Unità**: contratti binari Yes/No con ≥5 post linkati pre-cutoff → **283 contratti** (24% Yes;
+  73 in più rispetto alle due piattaforme, grazie alla copertura Reddit).
 - **Cross-validation temporale**, come chiede la traccia: contratti ordinati per data di
   risoluzione, walk-forward a finestra espandibile (5 fold): il modello predice sempre contratti
   che si risolvono *dopo* tutto ciò su cui è stato addestrato.
@@ -360,29 +368,24 @@ qualcosa.
   market/evento). Non si "bilancia" raccogliendo contratti in base all'etichetta (selection
   bias); si gestisce nel modello (`class_weight`) e nelle metriche: macro-F1 pesa le classi
   allo stesso modo, l'AUC-ROC è indipendente dalla soglia, e la baseline di maggioranza
-  (0,748) è dichiarata come termine di paragone.
+  (0,756) è dichiarata come termine di paragone.
 
-**Risultati** (media su 5 fold; baseline di maggioranza: accuracy 0,748):
+**Risultati** (media su 5 fold; baseline di maggioranza: accuracy 0,756):
 
-| Feature set | Modello | Accuracy | Macro-F1 | AUC-ROC |
-|---|---|---|---|---|
-| Social | LogReg | 0,669 | 0,582 | 0,603 |
-| Social | GBoost | 0,726 | 0,511 | 0,559 |
-| Linguistiche (TF-IDF) | LogReg | 0,674 | 0,567 | 0,705 |
-| **Prezzo** | LogReg | **0,909** | **0,893** | **0,980** |
-| Combinato | LogReg | 0,909 | 0,868 | 0,953 |
+| Feature set | Modello | Accuracy | AUC-ROC |
+|---|---|---|---|
+| Social | LogReg | 0,613 | 0,553 |
+| Social | GBoost | 0,694 | 0,563 |
+| Linguistiche (TF-IDF) | LogReg | 0,600 | 0,642 |
+| **Prezzo** | LogReg | **0,911** | **0,966** |
+| Combinato | LogReg | 0,923 | 0,942 |
 
-**Lettura.** (1) Le feature social da sole battono il caso (AUC 0,60-0,70 > 0,5) ma **non battono
-
-nemmeno la baseline di maggioranza in accuracy**: il segnale esiste ed è debole. Le feature
-
-linguistiche sono le migliori del blocco social (AUC 0,705): *di cosa* si parla è più informativo
-
-di *quanto* se ne parla. (2) Il prezzo al cutoff è quasi un classificatore perfetto (AUC 0,980) —
-
-la versione predittiva del §7.1. (3) Il combinato **non supera** il prezzo da solo (0,953 vs
-
-0,980): l'informazione social è già incorporata nel prezzo. È la stessa conclusione di §7.3
+**Lettura.** (1) Le feature social da sole battono il caso (AUC 0,55-0,64 > 0,5) ma **non battono
+la baseline di maggioranza in accuracy**: il segnale esiste ed è debole. Le feature linguistiche
+sono le migliori del blocco social (AUC 0,642): *di cosa* si parla è più informativo di *quanto*
+se ne parla. (2) Il prezzo al cutoff è quasi un classificatore perfetto (AUC 0,966) — la versione
+predittiva del §7.1. (3) Il combinato **non supera in AUC** il prezzo da solo (0,942 vs 0,966):
+l'informazione social è già incorporata nel prezzo. È la stessa conclusione di §7.3
 
 riformulata come esperimento di classificazione: il mercato ha già scontato il discorso social.
 
@@ -439,7 +442,10 @@ un dataset scaricato da un dataset compreso.
 ```py
 pipeline/polymarket.py     # contratti + prezzi
 pipeline/bluesky.py        # post Bluesky (app password in .env)
-pipeline/bluesky_extra.py  # seconda passata: commenti (thread) + follower autori
+pipeline/bluesky_extra.py  # seconda passata Bluesky: commenti (thread) + follower autori
+pipeline/reddit_collect.py # post Reddit via Scrapfly (search.json, proxy residenziale)
+pipeline/reddit_integrate.py # score MPNet + sentiment/NER incrementali per Reddit
+pipeline/reddit_kappa.py   # validazione linking Reddit (giudice Gemini) -> κ 0.504
 pipeline/telegram.py       # messaggi Telegram (sessione Telethon)
 pipeline/link_telegram.py  # linking keyword Telegram
 pipeline/linking.py        # filtro semantico + giudice Gemini

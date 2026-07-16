@@ -43,7 +43,7 @@ def render(where: str) -> None:
     sent = posts["sentiment_score"].dropna()
     e.metric("Sentiment medio", f"{sent.mean():+.2f}" if len(sent) else "n/d")
 
-    plat = st.radio("Piattaforma", ["tutte", "bluesky", "telegram"], horizontal=True)
+    plat = st.radio("Piattaforma", ["tutte", "reddit", "bluesky", "telegram"], horizontal=True)
     text_q = st.text_input("Cerca nel testo dei post", "")
     view = posts
     if plat != "tutte":
