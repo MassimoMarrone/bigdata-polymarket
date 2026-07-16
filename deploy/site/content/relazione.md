@@ -1,7 +1,7 @@
 ---
 tags: []
 date created: Wednesday, July 15th 2026, 2:01:19 pm
-date modified: Wednesday, July 15th 2026, 9:18:22 pm
+date modified: Wednesday, July 15th 2026, 10:46:49 pm
 ---
 
 ## Social Media Signals and Prediction Market Outcomes
@@ -48,13 +48,20 @@ La traccia indica tre piattaforme social: **Reddit, X (Twitter), Telegram**. Due
 inaccessibili, per ragioni tecniche documentabili e non aggirabili in modo lecito:
 
 - **X/Twitter** — API a pagamento, fuori dalla portata di un progetto universitario.
-- **Reddit** — a fine 2025 Reddit ha **rimosso la creazione self-service delle chiavi della Data API**;
-  l'account viene reindirizzato alla Developer Platform (Devvit), che serve a *scrivere* dentro Reddit,
-  non a estrarre dataset. L'endpoint pubblico `.json` risponde **403** a ogni richiesta da script.
-  L'unica via autorizzata alla ricerca è il programma *Reddit for Researchers*, che richiede
-  affiliazione istituzionale con Principal Investigator e approvazione di un comitato etico — non
-  percorribile nei tempi. La *Responsible Builder Policy* vieta sia lo scraping non approvato sia
-  l'uso dei dump storici fuori dal programma.
+- **Reddit** — inaccessibile in modo gratuito *e* lecito. La conclusione non è un'assunzione: sono
+  state verificate empiricamente tutte e quattro le vie di accesso.
+
+  | Via di accesso | Esito verificato |
+  |---|---|
+  | API ufficiale (PRAW) | registrazione di un'app *script* su `reddit.com/prefs/apps` non completabile: dopo la rimozione della creazione self-service delle chiavi (fine 2025) l'account viene reindirizzato a Devvit / al modulo di approvazione della *Responsible Builder Policy*, che per progetti piccoli è di norma respinto |
+  | Endpoint pubblico `.json` da script | **HTTP 403** a ogni richiesta, anche con user-agent di browser (il blocco anti-bot scatta alla prima chiamata, non è un rate-limit) |
+  | Session cookie autenticati | tecnicamente possibile ma viola lo User Agreement e mette a rischio di sospensione l'account personale; scartato |
+  | Scraping via proxy commerciale (Scrapfly) | **funziona** (probe: 57/97 post pertinenti e in-finestra su un contratto del 2024) ma richiede proxy residenziale a pagamento (~25-32 crediti/richiesta, ordine di $30-100 per l'intero dataset) e opera aggirando la protezione anti-bot |
+
+  L'unica via lecita alla ricerca storica è *Reddit for Researchers*, che richiede affiliazione
+  istituzionale con Principal Investigator e approvazione di un comitato etico — non percorribile
+  nei tempi. Nessuna delle vie è al tempo stesso **gratuita, lecita e praticabile**, quindi Reddit
+  è escluso con motivazione documentata anziché con una raccolta di provenienza discutibile.
 
 **Sostituzione adottata: Bluesky al posto di X.** Bluesky occupa la stessa nicchia — discorso
 
@@ -90,9 +97,13 @@ La pipeline segue un approccio **ELT** (Extract-Load-Transform), non ETL:
 #### 3.2 Raccolta Polymarket
 
 Contratti risolti e serie storiche di prezzo dalla Gamma API e dalla CLOB API. **420 contratti**
+
 risolti raccolti (≥130 per dominio); un filtro di qualità a valle (≥10 snapshot di prezzo — un
+
 contratto con 2 punti non può sostenere un'analisi lead/lag) ne promuove **380 al livello
+
 analitico** (130 finance / 127 politics / 123 sports — il minimo di 100 per dominio resta
+
 ampiamente rispettato), con **95.094 snapshot** di prezzo giornalieri.
 
 Una scelta di campionamento si è rivelata critica. Ordinando i mercati per volume di scambi, i
