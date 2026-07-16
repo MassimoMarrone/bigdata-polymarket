@@ -30,12 +30,12 @@
 <div class="wrap">
 
   <section class="hero">
-    <p class="eyebrow">An empirical study · 420 contracts · 162k posts · 3 domains</p>
+    <p class="eyebrow">An empirical study · 380 contracts · 3 social platforms · 3 domains</p>
     <h1><span class="market">Markets move first.</span><br>
         <span class="social">Social media follows</span> — one day later.</h1>
     <p class="sub">
       I built a full ingestion-to-analysis pipeline linking <b>Polymarket prediction
-      markets</b> to the public discourse on <b>Bluesky and Telegram</b>. The result is
+      markets</b> to the public discourse on <b>Reddit, Bluesky and Telegram</b>. The result is
       unambiguous: prices are calibrated <b>months before resolution</b>, and social
       chatter peaks <b>one day after</b> the market moves — commentary, not prophecy.
     </p>
@@ -75,7 +75,7 @@
         <text x="517" y="238" fill="#E0B15C" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">+1</text>
         <text x="745" y="238" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">+5</text>
         <!-- annotation -->
-        <text x="517" y="32" fill="#E0B15C" font-family="IBM Plex Mono, monospace" font-size="13" text-anchor="middle">r = 0.117 — the social echo</text>
+        <text x="517" y="32" fill="#E0B15C" font-family="IBM Plex Mono, monospace" font-size="13" text-anchor="middle">r = 0.14 — the social echo</text>
       </svg>
       <figcaption>Cross-correlation of social volume ~ |Δprice| at time shifts of ±7 days,
       averaged over 3 domains. Flat on the left (nothing anticipates), <span class="amber">peak at +1 day</span>
@@ -95,11 +95,9 @@
            left for social media to anticipate.</p>
       </div>
       <div class="finding amber">
-        <div class="num">82% <span style="font-size:18px;color:var(--muted)">vs</span> 31%</div>
-        <h3>Platforms specialise in opposite directions</h3>
-        <p>Bluesky covers 82% of contracts and is dominated by sport; Telegram covers 31%,
-           is all politics and finance, and has essentially no sport. Which platform is
-           informative depends on the domain.</p>
+        <div class="num">3 platforms</div>
+        <h3>Platforms specialise by domain</h3>
+        <p>Reddit (89% coverage) is balanced across all domains; Bluesky (82%) is dominated by sport; Telegram (31%) is politics and finance, no sport. Which platform is informative depends on the domain — they are complementary, not redundant.</p>
       </div>
       <div class="finding">
         <div class="num">AUC 0.98 <span style="font-size:18px;color:var(--muted)">vs</span> 0.70</div>
@@ -115,8 +113,8 @@
     <p class="kicker">Pipeline</p>
     <h2>From two public APIs to a validated dataset</h2>
     <div class="pipeline">
-      <div class="stage"><div class="t">collect</div><div class="d">420 resolved contracts, 95k price snapshots (Gamma/CLOB) · 51k Bluesky posts · 111k Telegram messages</div></div>
-      <div class="stage"><div class="t">link</div><div class="d">keyword recall → MPNet semantic filter → Gemini LLM-as-judge on a stratified sample (κ = 0.434)</div></div>
+      <div class="stage"><div class="t">collect</div><div class="d">380 resolved contracts, 95k price snapshots (Gamma/CLOB) · 6.5k Reddit + 48k Bluesky posts · 111k Telegram messages</div></div>
+      <div class="stage"><div class="t">link</div><div class="d">keyword recall → MPNet semantic filter → Gemini LLM-as-judge, validated per platform (κ = 0.43–0.50)</div></div>
       <div class="stage"><div class="t">enrich</div><div class="d">language detection, RoBERTa sentiment on 36k English posts, spaCy NER, per-pair dedup</div></div>
       <div class="stage"><div class="t">store</div><div class="d">immutable raw JSONL → Parquet queried in-place by DuckDB (measured 100× faster than Spark here)</div></div>
       <div class="stage"><div class="t">analyse</div><div class="d">lead/lag cross-correlation, sentiment direction tests, outcome prediction with temporal CV</div></div>
