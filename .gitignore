@@ -18,3 +18,4 @@ deploy/site/dist/
 # credenziali Telegram (sessione = accesso all account)
 tg.session
 .tg_pending.json
+data/contracts_export_collectors.csv

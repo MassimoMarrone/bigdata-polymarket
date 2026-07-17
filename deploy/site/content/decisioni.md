@@ -259,7 +259,7 @@ I due modelli di **entailment** falliscono in direzioni opposte, il che conferma
 
 ---
 
-### [2026-07-14] RISULTATO CENTRALE: i social INSEGUONO il mercato (lag +1 giorno)
+### [2026-07-14] ~~RISULTATO CENTRALE: i social INSEGUONO il mercato (lag +1 giorno)~~ → RITIRATO il 17/07, vedi ultima voce
 
 **Analisi** (`pipeline/correlation.py`): correlazione fra **|variazione giornaliera di prezzo|** e **volume di post** linkati (MPNet ≥0.35, solo EN), con la serie social sfasata di -7..+7 giorni. 99 contratti con dati sufficienti (≥20 giorni, ≥20 post).
 
@@ -284,3 +284,37 @@ I due modelli di **entailment** falliscono in direzioni opposte, il che conferma
    il numero interessante è se COMBINED > PRICE.
 
 **Risultato (misurato).** Social AUC 0,56-0,60, TF-IDF 0,705, prezzo 0,980, combinato 0,953: il social batte il caso ma non la baseline di maggioranza (0,748 accuracy), e NON aggiunge nulla al prezzo. Coerente con lead/lag (+1 giorno): il mercato ha già scontato il discorso social. Risultati in `data/processed/prediction_results.json`, codice `pipeline/predict.py`.
+
+---
+
+### [2026-07-17] RETTIFICA: il "lag +1" era un artefatto — il risultato vero è co-movimento same-day
+
+**Come è emerso.** Review finale pre-consegna: un test sintetico (dati costruiti con un social
+che *reagisce* il giorno dopo il movimento) ha prodotto il picco sul lato etichettato
+"anticipano". Da lì, due difetti indipendenti che si sommavano:
+
+1. **Etichetta del segno invertita** in `xcorr`: `shift(lag)` con lag positivo accoppia il
+   movimento di oggi col volume di IERI (che *precede*), ma la stampa diceva "inseguono".
+2. **Timestamp midnight**: tutti gli snapshot di prezzo sono stampati alle 00:00 UTC — il punto
+   del giorno *t* è la frontiera *t−1/t*, quindi `diff(t)` è il movimento avvenuto durante il
+   giorno *t−1*. Un altro −1 di attribuzione che nessuno stava contando.
+
+**Risultato corretto** (convenzione `offset = giorno volume − giorno movimento`, fissata da
+`tests/test_correlation.py` con serie sintetiche che riproducono anche la convenzione midnight):
+picco a **offset 0** in aggregato E in tutti e tre i domini (finance 0,134 / politics 0,129 /
+sports 0,159), fianchi simmetrici (0,066 a ±1). **Co-movimento same-day, nessun lead misurabile
+in nessuna direzione.** Ritirata anche l'osservazione per-piattaforma "Reddit reattivo / Bluesky
+anticipatorio" (17/07 mattina): sotto la convenzione corretta i picchi si sparpagliano
+(Reddit 0, Bluesky +2, Telegram −5) — rumore.
+
+**Perché il bug è sopravvissuto:** produceva un risultato *plausibile* e coerente con la teoria
+(mercati efficienti → i social inseguono). I risultati che confermano le attese sono quelli che
+nessuno verifica. La suite di test copriva dashboard e feature del Task 3, non la matematica
+delle analisi — esattamente il buco dove il bug viveva.
+
+**Cosa NON cambia:** la tesi del progetto ("il mercato ha già letto i social") resta in piedi,
+portata da §7.1 (calibrazione mesi prima) e dal Task 3 (prezzo AUC 0,966 vs social 0,553;
+combinato non batte il prezzo). Cambia il §7.3: da claim direzionale a claim di sincronia.
+
+**Per l'orale:** raccontarlo. Un claim ritirato per auto-verifica con test di regressione è
+esattamente il metodo che il corso valuta.

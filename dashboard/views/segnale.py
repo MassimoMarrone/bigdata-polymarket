@@ -11,9 +11,13 @@ from data import query
 
 def render(where: str) -> None:
     st.subheader("I social anticipano o inseguono il mercato?")
-    st.caption("Correlazione fra |variazione di prezzo| e volume social, sfasando la "
-               "serie social di ±7 giorni. Picco a lag negativo = anticipano; a lag "
-               "positivo = inseguono. Solo coppie sopra il filtro semantico.")
+    st.caption("Correlazione fra |variazione di prezzo| e volume social per offset di "
+               "calendario (giorno del volume − giorno del movimento): negativo = "
+               "anticipano, 0 = stesso giorno, positivo = inseguono. Risposta misurata: "
+               "picco a 0 con fianchi simmetrici — si muovono insieme, nessun anticipo "
+               "misurabile a granularità giornaliera. Solo coppie sopra il filtro "
+               "semantico; convenzioni fissate da test di regressione "
+               "(tests/test_correlation.py).")
     # leadlag/sentiment_direction non hanno le colonne dei contratti: si filtra
     # per appartenenza all'insieme dei contratti selezionati in sidebar.
     in_sel = f"market_id IN (SELECT market_id FROM contracts WHERE {where})"
@@ -24,22 +28,23 @@ def render(where: str) -> None:
         return
     peak = int(ll.loc[ll["r"].idxmax(), "lag"])
     fig = px.bar(ll, x="lag", y="r",
-                 labels={"lag": "sfasamento (giorni)", "r": "correlazione media"},
-                 title=f"Volume social ~ |Δprezzo| — picco a lag {peak:+d} giorni → "
-                       f"{'i social inseguono' if peak > 0 else 'i social anticipano' if peak < 0 else 'sincroni'}")
+                 labels={"lag": "offset (giorni)", "r": "correlazione media"},
+                 title=f"Volume social ~ |Δprezzo| — picco a offset {peak:+d} → "
+                       f"{'i social inseguono' if peak > 0 else 'i social anticipano' if peak < 0 else 'stesso giorno, nessun lead'}")
     fig.add_vline(x=0, line_dash="dash", line_color="gray")
     st.plotly_chart(fig, width='stretch')
 
     st.subheader("Le piattaforme reagiscono allo stesso modo?")
-    st.caption("Lo stesso lead/lag, ma per piattaforma. Reddit e Telegram inseguono "
-               "(picco a lag positivo); Bluesky ha un leggero anticipo (lag −1) — la "
-               "discussione fra utenti precede un filo, i thread e i broadcast reagiscono. "
-               "Segnali deboli (r~0.07): un'osservazione, non un risultato forte. Telegram "
-               "è sparso (coverage 40%) e la sua curva è rumorosa.")
+    st.caption("Lo stesso profilo, scomposto per piattaforma. Solo Reddit replica il "
+               "picco pulito a offset 0; Bluesky e Telegram producono curve deboli con "
+               "picchi sparpagliati (r~0.07, indistinguibili dai fianchi): nessuna "
+               "differenza direzionale è difendibile a granularità giornaliera. Il "
+               "confronto per piattaforma che regge è quello di copertura per dominio "
+               "(scheda 4), non quello temporale.")
     llp = query("SELECT platform, lag, r FROM leadlag_platform WHERE lag BETWEEN -7 AND 7")
     fig2 = px.line(llp, x="lag", y="r", color="platform", markers=True,
-                   labels={"lag": "sfasamento (giorni)", "r": "correlazione media"},
-                   title="Volume ~ |Δprezzo| per piattaforma (lag>0 = insegue)")
+                   labels={"lag": "offset (giorni)", "r": "correlazione media"},
+                   title="Volume ~ |Δprezzo| per piattaforma (offset>0 = insegue)")
     fig2.add_vline(x=0, line_dash="dash", line_color="gray")
     st.plotly_chart(fig2, width='stretch')
 

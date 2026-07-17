@@ -14,9 +14,10 @@ dashboard, relazione tecnica e log delle decisioni.
 2. **Le piattaforme sono complementari, non ridondanti** — dopo il filtro semantico Reddit
    copre l'86% dei contratti ed è l'unica bilanciata sui tre domini; Bluesky il 90% ma con
    il 99% dello sport; Telegram il 40%, con lo sport praticamente assente (4%).
-3. **I social inseguono il mercato** — picco di correlazione volume↔|Δprezzo| a **lag +1
-   giorno**; e nel Task 3 il prezzo da solo (AUC 0,966) batte ogni feature set social
-   (0,553-0,642): il discorso è già incorporato nel prezzo.
+3. **I social non anticipano il mercato** — volume social e |Δprezzo| co-variano **lo
+   stesso giorno** (picco a offset 0, r=0,14, profilo simmetrico: nessun lead misurabile
+   in nessuna direzione); e nel Task 3 il prezzo da solo (AUC 0,966) batte ogni feature
+   set social (0,553-0,642): il discorso è già incorporato nel prezzo.
 
 Dataset: **420 contratti** risolti (380 al livello analitico), 95k snapshot di prezzo,
 6,5k post Reddit + 48,2k Bluesky + 111k messaggi Telegram, linking semantico validato con

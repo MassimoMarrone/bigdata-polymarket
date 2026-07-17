@@ -1,20 +1,31 @@
 """Lead/lag SCOMPOSTO per piattaforma (estende correlation.py, che aggrega).
 
-Domanda: le tre piattaforme reagiscono al mercato allo stesso modo, o il *tipo*
-di piattaforma (discussione utenti vs broadcast di notizie) cambia il profilo
-temporale? Correla |Δprezzo| giornaliero col volume di post di ciascuna
-piattaforma, sfasando ±7 giorni. Output: leadlag_platform.parquet.
+Domanda: le tre piattaforme mostrano lo stesso profilo temporale rispetto ai
+movimenti di prezzo? Convenzione degli offset identica a correlation.py
+(offset = giorno del volume - giorno del movimento; vedi tests/test_correlation.py
+per la storia dell'inversione corretta il 2026-07-17).
 
-Nota di lettura onesta: i segnali sono deboli (r ~0.05-0.08). Le differenze fra
-piattaforme sono suggestive, non forti — da presentare come osservazione.
+Nota di lettura onesta: i segnali sono deboli (r ~0.05-0.14) e a granularita'
+giornaliera con snapshot midnight-stamped NESSUNA differenza direzionale fra
+piattaforme e' difendibile. Il valore del confronto e' su copertura e rumore
+(Telegram sparso => profilo instabile), non sulla direzione.
+
+MIN_DAYS=10 (non 20 come nell'aggregato): le serie per-piattaforma sono piu'
+sparse — a 20 giorni minimi Telegram perderebbe quasi tutti i contratti e il
+confronto a tre non esisterebbe. Soglia piu' permissiva = piu' rumore, ed e'
+parte del motivo per cui questo file produce un'osservazione, non un risultato.
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import duckdb
 import numpy as np
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from correlation import offset_profile  # noqa: E402
 
 PROC = Path(__file__).resolve().parents[1] / "data" / "processed"
 THRESHOLD = 0.35
@@ -39,35 +50,32 @@ def daily() -> pd.DataFrame:
     """).df()
 
 
-def xcorr(g: pd.DataFrame, lag: int) -> float:
-    dp = g["px"].diff().abs()
-    v = g["n"].shift(lag)                 # lag>0: volume dopo il movimento -> insegue
-    m = dp.notna() & v.notna()
-    if m.sum() < 8 or dp[m].std() == 0 or v[m].std() == 0:
-        return np.nan
-    return float(np.corrcoef(dp[m], v[m])[0, 1])
-
-
 def main() -> None:
     df = daily()
     rows = []
     for plat in ("reddit", "bluesky", "telegram"):
         sub = df[df.platform == plat]
-        for lag in range(-MAX_LAG, MAX_LAG + 1):
-            rs = [xcorr(g.sort_values("d"), lag)
-                  for _, g in sub.groupby("market_id") if len(g) >= MIN_DAYS]
-            rs = [r for r in rs if not np.isnan(r)]
-            rows.append({"platform": plat, "lag": lag,
+        profiles = []
+        for _, g in sub.groupby("market_id"):
+            if len(g) < MIN_DAYS:
+                continue
+            g = g.sort_values("d").reset_index(drop=True)
+            dp = g["px"].diff().abs()
+            profiles.append(offset_profile(dp, g["n"], MAX_LAG, min_days=8))
+        for off in range(-MAX_LAG, MAX_LAG + 1):
+            rs = [p[off] for p in profiles if not np.isnan(p[off])]
+            rows.append({"platform": plat, "lag": off,
                          "r": float(np.mean(rs)) if rs else np.nan,
                          "n_contracts": len(rs)})
     out = pd.DataFrame(rows)
     out.to_parquet(PROC / "leadlag_platform.parquet", index=False)
 
-    print("Picco di correlazione per piattaforma (lag>0 = insegue il mercato):")
+    print("Profilo per piattaforma (offset = giorno volume - giorno movimento):")
     for plat in ("reddit", "bluesky", "telegram"):
         s = out[out.platform == plat].dropna(subset=["r"])
         peak = s.loc[s["r"].idxmax()]
-        print(f"  {plat:9s} picco a lag {int(peak['lag']):+d} (r={peak['r']:+.3f})")
+        print(f"  {plat:9s} picco a offset {int(peak['lag']):+d} (r={peak['r']:+.3f}, "
+              f"n={int(peak['n_contracts'])})")
     print(f"\nsalvato -> {PROC/'leadlag_platform.parquet'}")
 
 

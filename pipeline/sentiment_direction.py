@@ -51,11 +51,15 @@ def leadlag_signed(df: pd.DataFrame, contracts: pd.DataFrame) -> pd.DataFrame:
         # "no data", not "neutral crowd" -> mask empty days before differencing.
         sent = g["sentiment"].where(g["volume"] > 0)
         sent_shift = sent.diff().abs()
-        for lag in range(-MAX_LAG, MAX_LAG + 1):
+        # Stessa convenzione di correlation.offset_profile: lag = offset di
+        # calendario (giorno del sentiment - giorno del movimento), col -1 dei
+        # timestamp midnight incorporato. Il risultato qui e' un nullo piatto,
+        # simmetrico per costruzione, ma le etichette devono comunque dire il vero.
+        for off in range(-MAX_LAG, MAX_LAG + 1):
             rows.append({
-                "market_id": mid, "lag": lag,
-                "r_signed": xcorr(g["price_delta"], sent, lag),
-                "r_shift": xcorr(g["price_move"], sent_shift, lag),
+                "market_id": mid, "lag": off,
+                "r_signed": xcorr(g["price_delta"], sent, 1 - off),
+                "r_shift": xcorr(g["price_move"], sent_shift, 1 - off),
             })
     return pd.DataFrame(rows).merge(contracts, on="market_id")
 

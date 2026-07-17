@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Markets move first — Polymarket × Social Media</title>
-<meta name="description" content="A data-engineering study of 420 Polymarket contracts and 160k social posts: prediction markets price outcomes months ahead, while social media reacts one day late.">
+<meta name="description" content="A data-engineering study of 420 Polymarket contracts and 160k social posts: prediction markets price outcomes months ahead, while social media co-moves same-day and never leads.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -31,13 +31,14 @@
 
   <section class="hero">
     <p class="eyebrow">An empirical study · 380 contracts · 3 social platforms · 3 domains</p>
-    <h1><span class="market">Markets move first.</span><br>
-        <span class="social">Social media follows</span> — one day later.</h1>
+    <h1><span class="market">Markets know months ahead.</span><br>
+        <span class="social">Social media</span> never gets there first.</h1>
     <p class="sub">
       I built a full ingestion-to-analysis pipeline linking <b>Polymarket prediction
-      markets</b> to the public discourse on <b>Reddit, Bluesky and Telegram</b>. The result is
-      unambiguous: prices are calibrated <b>months before resolution</b>, and social
-      chatter peaks <b>one day after</b> the market moves — commentary, not prophecy.
+      markets</b> to the public discourse on <b>Reddit, Bluesky and Telegram</b>. The result:
+      prices are calibrated <b>months before resolution</b>, social chatter co-moves with
+      price <b>on the same day</b> with no measurable lead either way — and adds
+      <b>nothing</b> to price for predicting outcomes. Commentary, not prophecy.
     </p>
     <div class="actions">
       <a class="btn primary" href="/app/">Open the live dashboard</a>
@@ -70,16 +71,18 @@
           <rect x="839" y="218.7" width="40" height="1.3"   fill="#2E4468"/>
         </g>
         <!-- labels -->
-        <text x="61"  y="238" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">−7</text>
-        <text x="289" y="238" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">−3</text>
-        <text x="517" y="238" fill="#E0B15C" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">+1</text>
-        <text x="745" y="238" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">+5</text>
+        <text x="61"  y="238" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">−8</text>
+        <text x="289" y="238" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">−4</text>
+        <text x="517" y="238" fill="#E0B15C" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">0</text>
+        <text x="745" y="238" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">+4</text>
         <!-- annotation -->
-        <text x="517" y="32" fill="#E0B15C" font-family="IBM Plex Mono, monospace" font-size="13" text-anchor="middle">r = 0.14 — the social echo</text>
+        <text x="517" y="32" fill="#E0B15C" font-family="IBM Plex Mono, monospace" font-size="13" text-anchor="middle">r = 0.14 — the same-day echo</text>
       </svg>
-      <figcaption>Cross-correlation of social volume ~ |Δprice| at time shifts of ±7 days,
-      averaged over 3 domains. Flat on the left (nothing anticipates), <span class="amber">peak at +1 day</span>
-      (everything reacts).</figcaption>
+      <figcaption>Cross-correlation of social volume ~ |Δprice| by calendar-day offset,
+      averaged over 3 domains. <span class="amber">Peak at day 0</span> with symmetric flanks:
+      same-day co-movement, no measurable lead in either direction. (An earlier version read
+      this as "+1 day, social follows" — retracted after a synthetic test exposed an inverted
+      sign convention; the test now guards the pipeline.)</figcaption>
     </figure>
   </section>
 
@@ -100,11 +103,11 @@
         <p>Reddit (86% of contracts after semantic filtering) is balanced across all domains; Bluesky (90%) is dominated by sport; Telegram (40%) is politics and finance, no sport. Which platform is informative depends on the domain — they are complementary, not redundant.</p>
       </div>
       <div class="finding">
-        <div class="num">AUC 0.98 <span style="font-size:18px;color:var(--muted)">vs</span> 0.70</div>
+        <div class="num">AUC 0.97 <span style="font-size:18px;color:var(--muted)">vs</span> 0.64</div>
         <h3>Social features add nothing to price</h3>
         <p>Predicting outcomes with temporal cross-validation and a 7-day anti-leakage
-           cutoff: price alone reaches AUC 0.98, the best social features 0.70 — and the
-           combination doesn't beat price. The discourse is already priced in.</p>
+           cutoff: price alone reaches AUC 0.966, the best social feature set 0.642 — and
+           the combination doesn't beat price. The discourse is already priced in.</p>
       </div>
     </div>
   </section>
@@ -126,7 +129,7 @@
     <h2>Six views, one story</h2>
     <div class="shots">
       <a href="/app/?view=0"><img src="/shots/tab1-contratti.png" alt="Contracts view: durations, volumes, price calibration" loading="lazy"><div class="cap">01 · contracts — the market knows early</div></a>
-      <a href="/app/?view=2"><img src="/shots/tab3-segnale.png" alt="Signal view: lead/lag correlation peaking at +1 day" loading="lazy"><div class="cap">03 · signal ↔ market — the +1 day echo</div></a>
+      <a href="/app/?view=2"><img src="/shots/tab3-segnale.png" alt="Signal view: lead/lag correlation peaking at day 0" loading="lazy"><div class="cap">03 · signal ↔ market — the same-day echo</div></a>
       <a href="/app/?view=1"><img src="/shots/tab2-discorso.png" alt="Discourse view: volumes, sentiment, entities" loading="lazy"><div class="cap">02 · social discourse — sentiment &amp; entities</div></a>
       <a href="/app/?view=4"><img src="/shots/tab5-predizione.png" alt="Prediction view: AUC by feature set" loading="lazy"><div class="cap">05 · prediction — price beats everything</div></a>
     </div>

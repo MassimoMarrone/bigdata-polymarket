@@ -23,7 +23,7 @@ I *prediction market* come Polymarket aggregano l'intelligenza collettiva sul ve
 
 **Domanda di ricerca.** Il discorso social *anticipa* i movimenti del mercato (segnale predittivo), oppure li *commenta* dopo che sono avvenuti (segnale reattivo)?
 
-**Anticipazione del risultato.** Il discorso social sui prediction market è risultato **reattivo, non predittivo**: il picco di attività social segue di ~1 giorno i movimenti di prezzo (§7).
+**Anticipazione del risultato.** Il discorso social non anticipa il mercato: volume social e movimenti di prezzo **co-variano lo stesso giorno** (picco a offset 0, r=0,14, profilo simmetrico — §7.3), e nel task predittivo le feature social non aggiungono nulla al prezzo (AUC 0,553 contro 0,966 — §8). Il mercato ha già incorporato il discorso.
 
 **Scope.** Task 1 (ingestion), Task 2 (dashboard analitica) e Task 3 opzionale (outcome prediction, §8) completi.
 
@@ -306,14 +306,24 @@ Telegram praticamente per niente (4%) — 24 volte meno, a parità di metodo. Re
 equilibrata e in questo senso *riempie i buchi*: dove Telegram è assente, dà comunque l'89%. Su Telegram si erano verificati e scartati 12 canali sportivi alternativi — non esiste
 un canale pubblico EN con storico sportivo denso; con Reddit lo sport rientra nel dataset.
 
-#### 7.3 Correlazione segnale-mercato (Task 2.3): i social inseguono
+#### 7.3 Correlazione segnale-mercato (Task 2.3): sincroni, nessun anticipo misurabile
 
-Correlando la **variazione** giornaliera di prezzo (non il livello) con il volume social (ora
-aggregato sulle tre piattaforme), e sfasando le serie di ±7 giorni, il picco di correlazione è a
-**lag +1 giorno, r = 0,14** — più netto rispetto alle due piattaforme sole (era 0,12), segno che
-l'aggiunta di Reddit rafforza il segnale invece di diluirlo. La curva è piatta per lag negativi
-(social in anticipo), sale fino a +1 e decade: il profilo classico di un segnale **reattivo**,
-coerente su tutti e tre i domini.
+Correlando la **variazione** giornaliera di prezzo (non il livello) con il volume social (aggregato
+sulle tre piattaforme), e sfasando le serie di ±7 giorni, il picco di correlazione è a **offset 0
+— lo stesso giorno — con r = 0,14**, coerente su tutti e tre i domini (finance 0,134 / politics
+0,129 / sports 0,159), e il profilo **decade simmetricamente** sui due lati (r=0,066 sia a −1 sia
+a +1). La lettura onesta: social e mercato **reagiscono alla stessa notizia lo stesso giorno**;
+a granularità giornaliera non c'è un anticipo misurabile in nessuna delle due direzioni.
+
+**Nota di metodo (e di onestà).** Una prima versione di questa analisi riportava un picco a "lag
++1, i social inseguono". In fase di review finale un **test sintetico** — dati costruiti con un
+social che reagisce il giorno dopo — ha rivelato che l'etichettatura del segno era invertita, e
+che i timestamp giornalieri dei prezzi (tutti a mezzanotte UTC: il punto del giorno *t* è la
+frontiera *t−1/t*) spostano di un giorno l'attribuzione del movimento. Corrette entrambe le
+convenzioni (`tests/test_correlation.py` le fissa come regressione), il picco cade a offset 0 con
+fianchi simmetrici. La conclusione direzionale è stata quindi **ritirata**: qualunque claim
+"anticipa/insegue di un giorno" è sotto la risoluzione temporale di questi dati. Per risolvere la
+direzione servirebbero prezzi orari — un'estensione naturale, non un requisito della traccia.
 
 **E la direzione del sentiment?** La traccia chiede esplicitamente se la *direzione* del sentiment sia allineata alla direzione dei movimenti e se *shift rapidi* del sentiment aggregato accompagnino i movimenti significativi. Tre misure, tutte negative:
 
@@ -326,21 +336,21 @@ coerente su tutti e tre i domini.
 
 C'è una ragione strutturale, oltre alla debolezza del segnale: la polarità del sentiment riguarda il *tema*, non l'esito "Yes". Per "Will Iran strike Israel?" un rialzo del prezzo è una *cattiva* notizia — sentiment negativo accompagna legittimamente un prezzo che sale. Misurarlo onestamente, invece di forzare un allineamento, è parte del risultato: **è il volume del discorso a reagire ai movimenti, non la sua polarità a predirli.**
 
-**Le piattaforme non sono intercambiabili (osservazione).** Scomponendo il lead/lag *per
-piattaforma* (`correlation_platform.py`) emerge un contrasto tra le due piattaforme ricche di
-dati: **Reddit** picca a **lag +1** (reattivo, r=0,073), **Bluesky** a **lag −1** (leggermente
-anticipatorio, r=0,071). Il *tipo* di piattaforma sembra contare: la discussione *fra utenti*
-(Bluesky) ha un piccolo anticipo, i thread di discussione (Reddit) reagiscono. È una lettura
-coerente ma va data con cautela — le correlazioni sono deboli e la differenza Bluesky −1 vs +1 è
-piccola. Telegram è troppo sparso per un profilo temporale affidabile (picco a +6, quasi certamente
-rumore): un limite dovuto alla copertura del 40%, non un segnale.
+**Per piattaforma: solo Reddit ha un profilo pulito.** Scomponendo per piattaforma
+(`correlation_platform.py`, soglia di giorni più permissiva perché le serie sono più sparse),
+**Reddit** replica il picco a offset 0 (r=0,073); **Bluesky** e **Telegram** producono picchi
+sparpagliati (+2 e −5) con r indistinguibili dai fianchi — profili troppo deboli e rumorosi per
+qualunque affermazione temporale. Una versione precedente di questo paragrafo leggeva nelle
+differenze tra piattaforme un contrasto "reattivo vs anticipatorio": ritirata insieme al claim
+principale — era figlia delle stesse convenzioni errate. Ciò che del confronto per piattaforma
+**regge** è la specializzazione di dominio (§7.2), che non dipende da convenzioni temporali.
 
-**Conclusione.** Il discorso social sui prediction market **commenta il mercato il giorno dopo**,
-non lo anticipa (il pattern reattivo domina, confermato su tre piattaforme). Onestamente, le
-correlazioni sono deboli in valore assoluto (0,10-0,14): il segnale è consistente in segno e
-tempistica, ma modesto — non c'è un forte legame lineare volume↔movimenti. Questo è un risultato,
-non un fallimento: coerente con §7.1 (un mercato già efficiente lascia poco spazio a un segnale
-esterno).
+**Conclusione.** Il volume del discorso social **co-varia coi movimenti di prezzo lo stesso
+giorno** (r=0,14 al picco) e non mostra alcun potere anticipatorio misurabile a granularità
+giornaliera. Onestamente, le correlazioni sono deboli in valore assoluto: il legame
+volume↔movimenti esiste ma è modesto. È un risultato, non un fallimento: coerente con §7.1 (un
+mercato già calibrato mesi prima lascia poco da anticipare) e confermato dal Task 3 (§8), dove
+le feature social non aggiungono nulla al prezzo.
 
 ---
 
@@ -353,6 +363,14 @@ La domanda del Task 3: il discorso social — da solo o in combinazione col prez
 - **Anti-leakage per costruzione**: ogni feature (social E prezzo) è calcolata solo su dati
   antecedenti a *risoluzione − 7 giorni*. I post scritti quando l'esito è di fatto noto
   ("Trump ha nominato X", il giorno dopo la nomina) rivelerebbero l'etichetta.
+  *Limite dichiarato*: la finestra è ancorata a `resolution_date`, che per i contratti a scadenza
+  fissa (elezioni, partite) è nota in anticipo, ma per i contratti "will X happen by…" coincide
+  con l'evento — un residuo leakage *di timing* (non di esito). Riguarda allo stesso modo tutti i
+  feature set, quindi il confronto fra SOCIAL, PRICE e COMBINED resta pulito; l'alternativa
+  (ancorare a `close_date`) è un'estensione naturale.
+- **Imputazioni**: `price_30d` mancante (serie iniziata da meno di 30 giorni) → 0,5, il prezzo
+  della massima incertezza; le view esistono solo su Telegram e i follower non su Telegram, quindi
+  `views_mean` e `followers_mean` sono in parte proxy della piattaforma — dichiarato, non nascosto.
 - **Unità**: contratti binari Yes/No con ≥5 post linkati pre-cutoff → **283 contratti** (24% Yes;
   73 in più rispetto alle due piattaforme, grazie alla copertura Reddit).
 - **Cross-validation temporale**, come chiede la traccia: contratti ordinati per data di
@@ -431,18 +449,25 @@ WTI** ha rivelato che il linking è il problema scientifico del progetto e non u
 implementativo — tre soglie di prezzo diverse generano le stesse parole chiave, e correlare il
 prezzo di un contratto con i post di un altro avrebbe invalidato ogni numero a valle. Il
 **cross-encoder** che non batte il bi-encoder ha insegnato più di un successo: la diagnosi
-(obiettivo di addestramento sbagliato, non architettura sbagliata) vale più del κ mancato. E l'**accesso alle piattaforme** si è rivelato un risultato, non un preliminare: Reddit è stato
+(obiettivo di addestramento sbagliato, non architettura sbagliata) vale più del κ mancato. E il
+**bug del lead/lag** (§7.3) è il fallimento più istruttivo di tutti: un'etichetta di segno
+invertita e una convenzione di timestamp hanno prodotto per settimane un risultato direzionale
+plausibile, coerente con la teoria e sbagliato — finché un test sintetico da dieci righe, scritto
+in fase di review, non l'ha smontato. La versione corretta è meno narrabile e più vera; il test è
+rimasto nella suite come regressione.
+
+E l'**accesso alle piattaforme** si è rivelato un risultato, non un preliminare: Reddit è stato
 raggiunto solo per la via indicata dal corso (proxy Scrapfly) dopo che tutte le vie gratuite hanno
 restituito 403, mentre X è rimasto fuori — non per scelta, ma per tre prove empiriche
 convergenti documentate in §2. Sapere *perché* una fonte non è collezionabile, e dimostrarlo, è
 parte del lavoro di data engineering tanto quanto collezionarla.
 
 La misura sistematica — coverage, κ del giudice su tre piattaforme, benchmark DuckDB/Spark,
-lead/lag per piattaforma, ablazione dei feature set — è ciò che distingue un dataset scaricato da
-un dataset compreso. Il risultato onesto del progetto è negativo e vale più di uno positivo
-inventato: il segnale social esiste (r=0,14) ma è debole, insegue il mercato più di quanto lo
-anticipi, e non aggiunge nulla al prezzo per prevedere l'esito (AUC 0,553 contro 0,966). Il
-mercato, semplicemente, ha già letto i social.
+test di regressione sulle convenzioni temporali, ablazione dei feature set — è ciò che distingue
+un dataset scaricato da un dataset compreso. Il risultato onesto del progetto è negativo e vale
+più di uno positivo inventato: il segnale social esiste (r=0,14) ma è debole, si muove col
+mercato lo stesso giorno senza anticiparlo, e non aggiunge nulla al prezzo per prevedere l'esito
+(AUC 0,553 contro 0,966). Il mercato, semplicemente, ha già letto i social.
 
 ---
 
