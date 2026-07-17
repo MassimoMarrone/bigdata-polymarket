@@ -46,11 +46,10 @@
     </div>
 
     <figure class="lagchart">
-      <svg viewBox="0 0 920 260" role="img" aria-label="Bar chart: correlation between social volume and absolute price change, by time shift from minus 7 to plus 7 days. The peak is at plus one day.">
-        <!-- axis -->
+      <svg viewBox="0 0 920 260" role="img" aria-label="Bar chart: correlation between social volume and absolute price change, by calendar-day offset. The peak is at day zero, with symmetric flanks.">
+        <!-- axis; the dashed line marks day 0 = the amber peak bar -->
         <line x1="30" y1="220" x2="890" y2="220" stroke="#223049" stroke-width="1"/>
-        <line x1="460" y1="30" x2="460" y2="228" stroke="#223049" stroke-width="1" stroke-dasharray="4 5"/>
-        <text x="460" y="248" fill="#8B96AB" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">market moves (day 0)</text>
+        <line x1="517" y1="30" x2="517" y2="228" stroke="#223049" stroke-width="1" stroke-dasharray="4 5"/>
         <!-- bars: r(volume, |dP|) at lag -7..+7, real values from leadlag.parquet -->
         <!-- height = r * 1500 ; x centered on 460, step 57 -->
         <g>
@@ -128,10 +127,10 @@
     <p class="kicker">Dashboard</p>
     <h2>Six views, one story</h2>
     <div class="shots">
-      <a href="/app/?view=0"><img src="/shots/tab1-contratti.png" alt="Contracts view: durations, volumes, price calibration" loading="lazy"><div class="cap">01 · contracts — the market knows early</div></a>
-      <a href="/app/?view=2"><img src="/shots/tab3-segnale.png" alt="Signal view: lead/lag correlation peaking at day 0" loading="lazy"><div class="cap">03 · signal ↔ market — the same-day echo</div></a>
-      <a href="/app/?view=1"><img src="/shots/tab2-discorso.png" alt="Discourse view: volumes, sentiment, entities" loading="lazy"><div class="cap">02 · social discourse — sentiment &amp; entities</div></a>
-      <a href="/app/?view=4"><img src="/shots/tab5-predizione.png" alt="Prediction view: AUC by feature set" loading="lazy"><div class="cap">05 · prediction — price beats everything</div></a>
+      <a href="/app/?view=0"><img src="/shots/tab1-contratti.png?v=3p-20260717" alt="Contracts view: durations, volumes, price calibration" loading="lazy"><div class="cap">01 · contracts — the market knows early</div></a>
+      <a href="/app/?view=2"><img src="/shots/tab3-segnale.png?v=3p-20260717" alt="Signal view: lead/lag correlation peaking at day 0" loading="lazy"><div class="cap">03 · signal ↔ market — the same-day echo</div></a>
+      <a href="/app/?view=1"><img src="/shots/tab2-discorso.png?v=3p-20260717" alt="Discourse view: volumes, sentiment, entities" loading="lazy"><div class="cap">02 · social discourse — sentiment &amp; entities</div></a>
+      <a href="/app/?view=4"><img src="/shots/tab5-predizione.png?v=3p-20260717" alt="Prediction view: AUC by feature set" loading="lazy"><div class="cap">05 · prediction — price beats everything</div></a>
     </div>
     <p style="margin-top:22px"><a class="btn primary" href="/app/">Explore the live dashboard →</a></p>
   </section>
