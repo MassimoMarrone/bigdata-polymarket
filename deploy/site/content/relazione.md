@@ -446,6 +446,19 @@ mercato, semplicemente, ha già letto i social.
 
 ---
 
+#### Appendice — I cinque deliverable
+
+| | Deliverable | Dove |
+|---|---|---|
+| 1 | Relazione tecnica | questo documento (`Relazione.pdf`; anche su [polymarket.massimomarrone.dev/report](https://polymarket.massimomarrone.dev/report/)) |
+| 2 | **Dataset** | [polymarket.massimomarrone.dev/dataset/dataset-polymarket-social.zip](https://polymarket.massimomarrone.dev/dataset/dataset-polymarket-social.zip) — 24,7 MB, Parquet, con dizionario dei campi e mappatura sullo schema di Sezione 2 |
+| 3 | Codice sorgente | [github.com/MassimoMarrone/bigdata-polymarket](https://github.com/MassimoMarrone/bigdata-polymarket) |
+| 4 | Dashboard | istanza pubblicata su [polymarket.massimomarrone.dev/app](https://polymarket.massimomarrone.dev/app) (dimostrata live all'orale) |
+| 5 | Slide (opzionale) | non prodotte: la dashboard live è il supporto della discussione |
+
+Il dataset è servito con `noindex` e fuori dai motori di ricerca: contiene testi e
+identificativi di account reali, raccolti per uso didattico.
+
 #### Appendice — Riproducibilità
 
 ```py
