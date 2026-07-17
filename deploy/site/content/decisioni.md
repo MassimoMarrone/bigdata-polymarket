@@ -273,6 +273,11 @@ I due modelli di **entailment** falliscono in direzioni opposte, il che conferma
 
 ### [2026-07-15] Task 3: cutoff 7 giorni + CV temporale — il social non aggiunge nulla al prezzo
 
+> ℹ️ **Numeri superati dal rerun a 3 piattaforme (16-17/07):** 283 contratti, baseline 0,756,
+> prezzo AUC 0,966, miglior social 0,642, combinato 0,942 — conclusione invariata. Il richiamo
+> al "lead/lag +1" più sotto è superato dalla rettifica del 17/07 (ultima voce): la conclusione
+> di questo esperimento non dipende da quelle convenzioni ed è sopravvissuta intatta.
+
 **Decisione.** Task 3 (opzionale) implementato come confronto controllato di feature set — SOCIAL / PRICE / COMBINED / LINGUISTIC (TF-IDF) — sugli stessi 210 contratti binari e gli stessi 5 fold walk-forward (TimeSeriesSplit su contratti ordinati per data di risoluzione).
 
 **Le due scelte che rendono l'esperimento credibile:**

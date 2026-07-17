@@ -78,10 +78,12 @@ def render(where: str) -> None:  # noqa: ARG001 — l'esperimento è globale, no
     st.dataframe(df.round(3), width='stretch', hide_index=True)
 
     st.markdown(
-        "**Lettura.** Le feature social battono il caso (AUC 0,56-0,70) ma non la "
+        "**Lettura.** Le feature social battono il caso (AUC 0,55-0,64) ma non la "
         "baseline di maggioranza; le linguistiche (TF-IDF) sono le migliori del blocco "
         "social — *di cosa* si parla informa più di *quanto* se ne parla. Il prezzo al "
         "cutoff è quasi un classificatore perfetto e il combinato **non lo supera**: "
-        "l'informazione del discorso social è già incorporata nel prezzo. È il lead/lag "
-        "+1 giorno (scheda 3) riformulato come esperimento di classificazione."
+        "l'informazione del discorso social è già incorporata nel prezzo. È la stessa "
+        "conclusione della scheda 3 (co-movimento senza anticipo) riformulata come "
+        "classificazione — e, a differenza del lead/lag, non dipende da convenzioni "
+        "temporali: è sopravvissuta intatta alla rettifica del 17/07."
     )
