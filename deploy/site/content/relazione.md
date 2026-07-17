@@ -505,4 +505,7 @@ pipeline/spark_benchmark.py# DuckDB vs Spark
 dashboard/app.py           # dashboard Streamlit
 ```
 
-Il log completo delle decisioni con motivazioni è in `Decisioni.md` (15 voci).
+La suite di test (`tests/`, 20 test) copre le sei schede della dashboard, le feature del Task 3,
+la conformità del dataset allo schema della traccia e — come regressione — le convenzioni
+temporali del lead/lag (§7.3). Il log completo delle decisioni, con le motivazioni e le due
+rettifiche documentate, è in `Decisioni.md` (18 voci).
