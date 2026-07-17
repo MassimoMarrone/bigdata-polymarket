@@ -1,0 +1,56 @@
+{
+  "leadlag": {
+    "0.3": {
+      "n_contracts": 210,
+      "peak_offset": 0,
+      "r_peak": 0.134,
+      "flank_-1": 0.062,
+      "flank_+1": 0.064
+    },
+    "0.35": {
+      "n_contracts": 202,
+      "peak_offset": 0,
+      "r_peak": 0.14,
+      "flank_-1": 0.066,
+      "flank_+1": 0.066
+    },
+    "0.4": {
+      "n_contracts": 189,
+      "peak_offset": 0,
+      "r_peak": 0.144,
+      "flank_-1": 0.062,
+      "flank_+1": 0.065
+    }
+  },
+  "task3": {
+    "0.3": {
+      "n_contracts": 305,
+      "auc_social": 0.498,
+      "auc_price": 0.965,
+      "auc_combined": 0.925
+    },
+    "0.35": {
+      "n_contracts": 283,
+      "auc_social": 0.553,
+      "auc_price": 0.966,
+      "auc_combined": 0.942
+    },
+    "0.4": {
+      "n_contracts": 262,
+      "auc_social": 0.5,
+      "auc_price": 0.965,
+      "auc_combined": 0.931
+    }
+  },
+  "bootstrap": {
+    "n_contracts": 202,
+    "r_peak_ci95": [
+      0.107,
+      0.174
+    ],
+    "peak_minus_flanks_ci95": [
+      0.05,
+      0.098
+    ]
+  }
+}

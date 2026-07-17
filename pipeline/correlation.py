@@ -41,7 +41,12 @@ ROOT = Path(__file__).resolve().parents[1]
 PROC = ROOT / "data" / "processed"
 RAW = ROOT / "data" / "raw"
 
-THRESHOLD = 0.35  # MPNet cosine; see Decisioni.md
+import os
+
+# MPNet cosine; see Decisioni.md. Overridable per l'analisi di sensibilita'
+# (LINK_THRESHOLD=0.30/0.40): i risultati a valle non devono dipendere in modo
+# fragile da un parametro scelto sul campione del giudice.
+THRESHOLD = float(os.environ.get("LINK_THRESHOLD", "0.35"))
 MAX_LAG = 7
 MIN_DAYS = 20  # a lead/lag estimate on a handful of days is noise
 

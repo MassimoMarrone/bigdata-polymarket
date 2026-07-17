@@ -37,8 +37,12 @@ from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+import os
+
 PROC = Path(__file__).resolve().parents[1] / "data" / "processed"
-THRESHOLD = 0.35   # same semantic filter as the dashboard
+# Same semantic filter as the dashboard; LINK_THRESHOLD overrides it for the
+# sensitivity analysis (results must not hinge on the judge-sample optimum).
+THRESHOLD = float(os.environ.get("LINK_THRESHOLD", "0.35"))
 CUTOFF_DAYS = 7    # features stop 7 days before resolution
 MIN_POSTS = 5      # a contract enters the dataset with >=5 pre-cutoff posts
 N_SPLITS = 5

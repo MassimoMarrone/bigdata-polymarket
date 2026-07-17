@@ -127,7 +127,7 @@ Log delle decisioni architetturali prese durante il progetto. Ogni entry spiega 
 
 ---
 
-### [2026-07-13] Piattaforme: Bluesky + Telegram (no Reddit, no X)
+### [2026-07-13] ~~Piattaforme: Bluesky + Telegram (no Reddit, no X)~~ → SUPERATA il 16/07 per la parte Reddit, vedi *Reintroduzione di Reddit via Scrapfly*
 
 **Scelta:** **Bluesky** (via API pubblica AT Protocol) + **Telegram** (canali pubblici via Telethon).
 
@@ -289,6 +289,33 @@ I due modelli di **entailment** falliscono in direzioni opposte, il che conferma
    il numero interessante è se COMBINED > PRICE.
 
 **Risultato (misurato).** Social AUC 0,56-0,60, TF-IDF 0,705, prezzo 0,980, combinato 0,953: il social batte il caso ma non la baseline di maggioranza (0,748 accuracy), e NON aggiunge nulla al prezzo. Coerente con lead/lag (+1 giorno): il mercato ha già scontato il discorso social. Risultati in `data/processed/prediction_results.json`, codice `pipeline/predict.py`.
+
+---
+
+### [2026-07-16] Reintroduzione di Reddit via Scrapfly (terza decisione di piattaforma)
+
+**Scelta:** raccogliere Reddit tramite `search.json` dietro **proxy residenziale Scrapfly**,
+budget ~$30 (piano Discovery), collector `pipeline/reddit_scrapfly.py`.
+
+**Perché la voce del 13/07 è superata.** Quella voce escludeva Reddit su due basi: (a) il 403
+dell'endpoint pubblico e (b) il timore che aggirarlo ricadesse nel "circumvent safety
+mechanisms" della Responsible Builder Policy. La base (b) è cambiata con un fatto nuovo: il
+**docente ha indicato esplicitamente Scrapfly** come via per il progetto ("provate con Scrapfly,
+se diventa costoso vedete voi"), fornendo anche gli script di scraping del corso — la via del
+proxy è quindi quella *sanzionata dalla sede didattica per questo lavoro*, non un aggiramento
+deciso in autonomia. Restava il vincolo (a) tecnico-economico: un probe ha verificato che
+`search.json` con sort=relevance raggiunge i post storici del 2024 (57/97 su un contratto di
+test) a ~32 crediti/richiesta, rendendo la raccolta completa fattibile nel budget.
+
+**Esito misurato:** 6.491 post su 340/380 contratti (89% raccolta, 86% dopo il filtro), 17.969
+commenti, follower/karma di ~3.000 autori; κ del linking su Reddit = 0.504 (soglia fissa, nessuna
+ricerca). Reddit è l'unica piattaforma bilanciata sui tre domini (§7.2) e ha reso il dataset
+conforme all'enum della traccia (reddit ✓, telegram ✓, Bluesky come sostituto motivato di X).
+
+**Ammissione documentale (dall'audit del 17/07):** questa voce è stata scritta il 17/07, a
+posteriori — la decisione era del 16 e il log non l'aveva registrata, lasciando in piedi la
+contraddizione con la voce del 13/07. Errore di processo, non di merito: registrato qui perché
+il log deve dire anche quando ha mancato il suo scopo.
 
 ---
 

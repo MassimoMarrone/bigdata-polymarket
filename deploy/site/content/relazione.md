@@ -23,7 +23,7 @@ I *prediction market* come Polymarket aggregano l'intelligenza collettiva sul ve
 
 **Domanda di ricerca.** Il discorso social *anticipa* i movimenti del mercato (segnale predittivo), oppure li *commenta* dopo che sono avvenuti (segnale reattivo)?
 
-**Anticipazione del risultato.** Il discorso social non anticipa il mercato: volume social e movimenti di prezzo **co-variano lo stesso giorno** (picco a offset 0, r=0,14, profilo simmetrico — §7.3), e nel task predittivo le feature social non aggiungono nulla al prezzo (AUC 0,553 contro 0,966 — §8). Il mercato ha già incorporato il discorso.
+**Anticipazione del risultato.** Nessun anticipo misurabile del discorso social sul mercato, a granularità giornaliera: volume social e movimenti di prezzo **co-variano lo stesso giorno** (picco a offset 0, r=0,14, profilo simmetrico — §7.3), e nel task predittivo le feature social non aggiungono nulla al prezzo (AUC 0,553 contro 0,966 — §8). La lettura più semplice, coerente con la calibrazione di §7.1: il mercato ha già incorporato il discorso.
 
 **Scope.** Task 1 (ingestion), Task 2 (dashboard analitica) e Task 3 opzionale (outcome prediction, §8) completi.
 
@@ -214,23 +214,56 @@ flowchart TB
 
 #### 4.1 Calibrazione e ablazione dei modelli
 
-Confrontati due modelli di embedding contro il giudice (κ di Cohen come accordo):
+Confrontati due modelli di embedding contro il giudice (κ di Cohen come accordo), sul campione
+di validazione consegnato con il dataset (`linking_validation.jsonl`, 200 coppie stratificate,
+103 giudicate rilevanti):
 
 | Modello | Soglia | Cohen's κ | Precision | Recall |
 |---|---|---|---|---|
-| **MPNet** (`all-mpnet-base-v2`) | 0.35 | **0.434** | 0.69 | 0.85 |
-| MiniLM (`all-MiniLM-L6-v2`) | 0.45 | 0.410 | 0.72 | 0.70 |
+| **MPNet** (`all-mpnet-base-v2`) | **0.35 (usata)** | 0.425 | 0.68 | **0.85** |
+| MPNet | 0.40 | **0.518** | 0.75 | 0.81 |
+| MiniLM (`all-MiniLM-L6-v2`) | 0.45 | 0.440 | 0.73 | 0.72 |
+
+**Tre avvertenze, dichiarate perché un lettore che rifà i conti le troverebbe comunque.**
+(1) *Il giudice non è deterministico*: un run precedente su un campione rigenerato dava MPNet
+0.434 / MiniLM 0.410 — classifiche diverse fra run. Con n=200 l'errore standard di κ è ≈0.07:
+le differenze fra modelli e soglie in tabella sono **dentro il rumore di campionamento del
+giudice**, e l'ablazione va letta come "i modelli sono comparabili", non "MPNet vince".
+(2) *La soglia è cercata sullo stesso campione su cui si riporta il κ* (stima ottimistica —
+stesso caveat già dichiarato per i cross-encoder in §4.2, che si applica identicamente qui).
+(3) *Il κ misura l'accordo col giudice LLM, non con una verità umana* — il limite è discusso
+sotto. La scelta operativa resta **MPNet @ 0.35** e si fonda sul criterio dichiarato prima
+dell'ablazione, che il campione conferma: **recall** (0.85, il migliore in tabella) preferito
+a precisione — i falsi positivi si diluiscono nell'aggregazione giornaliera, i falsi negativi
+cancellano segnale che non torna.
+
+**La difesa vera è la robustezza a valle, non il κ.** Poiché la soglia è il parametro più
+arbitrario del progetto, tutti i risultati principali sono stati rieseguiti a 0.30 / 0.35 / 0.40
+(`scripts/sensitivity.py`, output in `sensitivity.json`):
+
+| Soglia | Picco lead/lag | r al picco | AUC prezzo | AUC social | AUC combinato |
+|---|---|---|---|---|---|
+| 0.30 | offset 0 | 0.134 | 0.965 | 0.498 | 0.925 |
+| **0.35** | **offset 0** | **0.140** | **0.966** | **0.553** | **0.942** |
+| 0.40 | offset 0 | 0.144 | 0.965 | 0.500 | 0.931 |
+
+Ogni conclusione della relazione è invariante alla soglia: il picco resta a 0, il prezzo domina,
+il social non aggiunge nulla, il combinato non supera mai il prezzo.
 
 **Validazione su tutte e tre le piattaforme.** Il κ sopra è misurato su Bluesky+Telegram. Il
-linking è stato validato *separatamente* anche su Reddit, con lo stesso giudice su un campione
-stratificato di 200 coppie: **κ = 0.504** (moderate, fascia alta — leggermente superiore).
-Il metodo generalizza: non è calibrato su una piattaforma sola.
+linking è stato validato *separatamente* anche su Reddit, con lo stesso giudice, stessa soglia
+fissa 0.35 (qui nessuna ricerca di soglia, quindi niente ottimismo da selezione) su un campione
+stratificato di 200 coppie: **κ = 0.504**. Il metodo generalizza: non è calibrato su una
+piattaforma sola.
 
-**Scelta: MPNet @ 0.35** (accordo *moderato* nella scala di Landis-Koch). Recall alto preferito a precisione alta: i falsi positivi residui si diluiscono nell'aggregazione giornaliera, i falsi negativi cancellano segnale che non torna.
+**Il limite del giudice.** Il κ misura l'accordo fra due sistemi automatici; l'accuratezza di
+Gemini su questo task non è garantita a priori. Per chiudere il cerchio è in corso una
+validazione umana: 100 coppie del campione etichettate alla cieca dall'autore, da cui κ
+umano↔giudice e κ umano↔filtro. [🔲 risultato da inserire quando l'etichettatura è completa]
 
 #### 4.2 Un esperimento negativo istruttivo
 
-Si è testato se un **cross-encoder** (che legge domanda e post *insieme*) battesse il bi-encoder. Soglia di successo fissata *prima*: κ > 0.55. Cinque modelli testati; nessuno supera MPNet (miglior cross-encoder: κ=0.426). Il risultato è informativo: il difetto non è **architetturale** (bivs cross-encoding) ma di **obiettivo di addestramento** — questi modelli imparano la *rilevanza topica*, e per un post sul Villarreal e un contratto sul Villarreal la risposta è correttamente "sì"; nessuno sa cercare "il post dice qualcosa su *questa specifica affermazione*".
+Si è testato se un **cross-encoder** (che legge domanda e post *insieme*) battesse il bi-encoder. Soglia di successo fissata *prima*: κ > 0.55. Cinque modelli testati; **nessuno raggiunge la soglia pre-registrata** (miglior cross-encoder: κ=0.426 — comparabile al bi-encoder, non superiore, e le differenze sono dentro il rumore di campionamento del giudice come per l'ablazione di §4.1). Il risultato è informativo: il difetto non è **architetturale** (bi vs cross-encoding) ma di **obiettivo di addestramento** — questi modelli imparano la *rilevanza topica*, e per un post sul Villarreal e un contratto sul Villarreal la risposta è correttamente "sì"; nessuno sa cercare "il post dice qualcosa su *questa specifica affermazione*".
 
 ---
 
@@ -247,6 +280,12 @@ Si è testato se un **cross-encoder** (che legge domanda e post *insieme*) batte
   che il linking aggancia post effettivamente sul tema.
 - **Deduplicazione** — un post può legarsi a più contratti legittimamente ("vince il City?" e
   "vince l'Inter?" condividono i post), quindi l'unità è la coppia (post, contratto), non il post.
+- **Topic modeling: suggerito dalla traccia, non usato — e il perché va detto.** In questo
+  disegno il *topic* di ogni post è già noto per costruzione: è la domanda del contratto a cui il
+  linking lo aggancia (129 eventi distinti). Un LDA sui post riscoprirebbe, peggio, una struttura
+  che possediamo già esatta; l'asse tematico è coperto dal linking semantico e quello del
+  contenuto da sentiment + NER. Sarebbe utile in un disegno diverso (scoperta di temi *non*
+  ancorati ai contratti), che non è la domanda di questo progetto.
 
 ---
 
@@ -310,10 +349,14 @@ un canale pubblico EN con storico sportivo denso; con Reddit lo sport rientra ne
 
 Correlando la **variazione** giornaliera di prezzo (non il livello) con il volume social (aggregato
 sulle tre piattaforme), e sfasando le serie di ±7 giorni, il picco di correlazione è a **offset 0
-— lo stesso giorno — con r = 0,14**, coerente su tutti e tre i domini (finance 0,134 / politics
-0,129 / sports 0,159), e il profilo **decade simmetricamente** sui due lati (r=0,066 sia a −1 sia
-a +1). La lettura onesta: social e mercato **reagiscono alla stessa notizia lo stesso giorno**;
-a granularità giornaliera non c'è un anticipo misurabile in nessuna delle due direzioni.
+— lo stesso giorno — con r = 0,14**, su **202 contratti** con dati sufficienti (≥20 giorni, ≥20
+post), coerente su tutti e tre i domini (finance 0,134 / politics 0,129 / sports 0,159). Il
+profilo **decade simmetricamente** sui due lati (r=0,066 sia a −1 sia a +1), e il contrasto regge
+a un intervallo di confidenza: bootstrap sui contratti (2.000 ricampionamenti, l'unità è il
+contratto perché i giorni dello stesso contratto sono correlati), **r al picco CI95 [0,107;
+0,174]**, differenza picco−fianchi **CI95 [0,050; 0,098]** — esclude lo zero nettamente. La
+lettura onesta: social e mercato **reagiscono alla stessa notizia lo stesso giorno**; a
+granularità giornaliera non c'è un anticipo misurabile in nessuna delle due direzioni.
 
 **Nota di metodo (e di onestà).** Una prima versione di questa analisi riportava un picco a "lag
 +1, i social inseguono". In fase di review finale un **test sintetico** — dati costruiti con un
@@ -327,20 +370,25 @@ direzione servirebbero prezzi orari — un'estensione naturale, non un requisito
 
 **E la direzione del sentiment?** La traccia chiede esplicitamente se la *direzione* del sentiment sia allineata alla direzione dei movimenti e se *shift rapidi* del sentiment aggregato accompagnino i movimenti significativi. Tre misure, tutte negative:
 
-1. **Lead/lag firmato** — r(ΔP, sentiment medio) è piatto a ogni sfasamento (±0,02, picco spurio
-   +3gg a r=0,023): nessun profilo coerente.
+1. **Lead/lag firmato** — r(ΔP, sentiment medio) è piatto a ogni offset (range ±0,028, estremo
+   a +2gg con r=−0,028): nessun profilo coerente.
 2. **Allineamento nei giorni di grande movimento** (top decile di |ΔP| per contratto) — il segno
-   del sentiment concorda con la direzione del prezzo in **164/345 giorni = 47,5%** (test binomiale
-   vs 50%: p=0,389, non significativo; stesso esito in tutti e tre i domini).
-3. **Shift di sentiment vs grandi movimenti** — r(|Δsentiment|, |ΔP|) anch'esso piatto (max 0,038).
+   del sentiment concorda con la direzione del prezzo in **231/461 giorni = 50,1%** (test binomiale
+   vs 50%: p=1,0 — indistinguibile dal lancio di una moneta; stesso esito in tutti e tre i domini).
+3. **Shift di sentiment vs grandi movimenti** — r(|Δsentiment|, |ΔP|) anch'esso piatto (max 0,055).
 
 C'è una ragione strutturale, oltre alla debolezza del segnale: la polarità del sentiment riguarda il *tema*, non l'esito "Yes". Per "Will Iran strike Israel?" un rialzo del prezzo è una *cattiva* notizia — sentiment negativo accompagna legittimamente un prezzo che sale. Misurarlo onestamente, invece di forzare un allineamento, è parte del risultato: **è il volume del discorso a reagire ai movimenti, non la sua polarità a predirli.**
 
 **Per piattaforma: solo Reddit ha un profilo pulito.** Scomponendo per piattaforma
-(`correlation_platform.py`, soglia di giorni più permissiva perché le serie sono più sparse),
-**Reddit** replica il picco a offset 0 (r=0,073); **Bluesky** e **Telegram** producono picchi
-sparpagliati (+2 e −5) con r indistinguibili dai fianchi — profili troppo deboli e rumorosi per
-qualunque affermazione temporale. Una versione precedente di questo paragrafo leggeva nelle
+(`correlation_platform.py`), **Reddit** replica il picco a offset 0 (r=0,073); **Bluesky** e
+**Telegram** producono picchi sparpagliati (+2 e −5) con r indistinguibili dai fianchi — profili
+troppo deboli e rumorosi per qualunque affermazione temporale. Va dichiarato che questa scomposizione
+è costruita su una pipeline **meno robusta** dell'aggregato, in tre punti: soglia di giorni più
+permissiva (10 vs 20, altrimenti Telegram sparirebbe dal confronto); serie costruite con un *inner
+join* sui giorni con almeno un post (l'aggregato riempie con volume=0), il che condiziona la
+correlazione ai giorni-con-post e fa sì che il `diff` del prezzo scavalchi i buchi; e shift per
+riga che sui buchi degrada l'allineamento di calendario. È il motivo per cui questo paragrafo è
+un'**osservazione** e non un risultato. Una versione precedente di questo paragrafo leggeva nelle
 differenze tra piattaforme un contrasto "reattivo vs anticipatorio": ritirata insieme al claim
 principale — era figlia delle stesse convenzioni errate. Ciò che del confronto per piattaforma
 **regge** è la specializzazione di dominio (§7.2), che non dipende da convenzioni temporali.
@@ -410,22 +458,30 @@ gantt
     Yes/No                                     :milestone, 2026-06-30, 0d
 ```
 
-**Risultati** (media su 5 fold; baseline di maggioranza: accuracy 0,756):
+**Risultati** (media su 5 fold; baseline di maggioranza: accuracy 0,756; le tre metriche sono
+quelle richieste dalla traccia — accuracy, macro-F1, AUC-ROC; tutti i numeri, comprese le
+combinazioni non in tabella, sono in `prediction_results.json`):
 
-| Feature set | Modello | Accuracy | AUC-ROC |
-|---|---|---|---|
-| Social | LogReg | 0,613 | 0,553 |
-| Social | GBoost | 0,694 | 0,563 |
-| Linguistiche (TF-IDF) | LogReg | 0,600 | 0,642 |
-| **Prezzo** | LogReg | **0,911** | **0,966** |
-| Combinato | LogReg | 0,923 | 0,942 |
+| Feature set | Modello | Accuracy | Macro-F1 | AUC-ROC |
+|---|---|---|---|---|
+| Social | LogReg | 0,613 | 0,521 | 0,553 |
+| Social | GBoost | 0,694 | 0,514 | 0,563 |
+| Linguistiche (TF-IDF) | LogReg | 0,600 | 0,523 | 0,642 |
+| **Prezzo** | LogReg | **0,911** | **0,892** | **0,966** |
+| Prezzo | GBoost | 0,851 | 0,805 | 0,920 |
+| Combinato | LogReg | 0,923 | 0,905 | 0,942 |
+| Combinato | GBoost | 0,860 | 0,807 | 0,925 |
+
+Il macro-F1 è la colonna che smaschera l'accuracy: Social/GBoost segna 0,694 di accuracy ma
+**0,514 di macro-F1** — quell'accuracy è quasi tutta classe maggioritaria, esattamente il
+fenomeno per cui la traccia chiede questa metrica su un dataset sbilanciato.
 
 **Lettura.** (1) Le feature social da sole battono il caso (AUC 0,55-0,64 > 0,5) ma **non battono
 la baseline di maggioranza in accuracy**: il segnale esiste ed è debole. Le feature linguistiche
 sono le migliori del blocco social (AUC 0,642): *di cosa* si parla è più informativo di *quanto*
 se ne parla. (2) Il prezzo al cutoff è quasi un classificatore perfetto (AUC 0,966) — la versione
 predittiva del §7.1. (3) Il combinato **non supera in AUC** il prezzo da solo (0,942 vs 0,966):
-l'informazione social è già incorporata nel prezzo. È la stessa conclusione di §7.3 riformulata come esperimento di classificazione: il mercato ha già scontato il discorso social.
+l'informazione di queste feature social è già incorporata nel prezzo. È la stessa conclusione di §7.3 riformulata come esperimento di classificazione. Una precisazione epistemica dovuta: ciò che il disegno dimostra è che *queste* feature, a *questa* granularità e con *questo* linking, non aggiungono valore predittivo al prezzo — "il mercato ha già scontato il discorso" è la spiegazione più semplice e coerente con §7.1, non l'unica logicamente possibile ("il mio strumento non vede il segnale" è osservazionalmente equivalente). Si sceglie la prima perché tre misure indipendenti convergono (calibrazione, lead/lag, ablazione), dichiarando l'inferenza per quello che è.
 
 ---
 
@@ -467,7 +523,9 @@ test di regressione sulle convenzioni temporali, ablazione dei feature set — �
 un dataset scaricato da un dataset compreso. Il risultato onesto del progetto è negativo e vale
 più di uno positivo inventato: il segnale social esiste (r=0,14) ma è debole, si muove col
 mercato lo stesso giorno senza anticiparlo, e non aggiunge nulla al prezzo per prevedere l'esito
-(AUC 0,553 contro 0,966). Il mercato, semplicemente, ha già letto i social.
+(AUC 0,553 contro 0,966). Il mercato, semplicemente, ha già letto i social — o, detto con la
+precisione che il disegno consente: niente di ciò che si è misurato distingue il mondo reale da
+uno in cui è così.
 
 ---
 

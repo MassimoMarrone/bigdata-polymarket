@@ -21,7 +21,7 @@ dashboard, relazione tecnica e log delle decisioni.
 
 Dataset: **420 contratti** risolti (380 al livello analitico), 95k snapshot di prezzo,
 6,5k post Reddit + 48,2k Bluesky + 111k messaggi Telegram, linking semantico validato con
-giudice LLM (κ = 0,434 su Bluesky+Telegram, 0,504 su Reddit).
+giudice LLM (κ ≈ 0,43 su Bluesky+Telegram e 0,50 su Reddit, con analisi di sensibilità alla soglia).
 
 X (Twitter) è stato sostituito con Bluesky: è risultato genuinamente inaccessibile su tre
 fronti indipendenti (API da ~$42.000/mese, ricerca web dietro login dal 2023, nessuno
