@@ -9,6 +9,10 @@ services:
     container_name: polymarket-site
     restart: unless-stopped
     networks: [server_net]
+    volumes:
+      # lo zip del dataset (24 MB) sta fuori dal repo e fuori dall'immagine:
+      # va copiato in deploy/dataset/ sul server (vedi scripts/package_dataset.py)
+      - ./dataset:/usr/share/nginx/html/dataset:ro
     ports:
       - "127.0.0.1:8091:80"   # per l'ingress cloudflared (config.yml sul host)
 
