@@ -256,10 +256,19 @@ fissa 0.35 (qui nessuna ricerca di soglia, quindi niente ottimismo da selezione)
 stratificato di 200 coppie: **κ = 0.504**. Il metodo generalizza: non è calibrato su una
 piattaforma sola.
 
-**Il limite del giudice.** Il κ misura l'accordo fra due sistemi automatici; l'accuratezza di
-Gemini su questo task non è garantita a priori. Per chiudere il cerchio è in corso una
-validazione umana: 100 coppie del campione etichettate alla cieca dall'autore, da cui κ
-umano↔giudice e κ umano↔filtro. [🔲 risultato da inserire quando l'etichettatura è completa]
+**Il limite del giudice — e due misure per circoscriverlo.** Il κ sopra misura l'accordo fra due
+sistemi automatici; l'accuratezza di Gemini su questo task non è garantita a priori. Due
+verifiche indipendenti:
+
+1. **Accordo fra giudici LLM di famiglie diverse.** Un secondo LLM (Claude, famiglia Anthropic)
+   ha etichettato alla cieca 100 coppie del campione (50/50 sui verdetti del giudice, ordine
+   casuale, stesso prompt): **κ Claude↔Gemini = 0,62** (*substantial*), contro 0,42 di
+   filtro↔giudice sulle stesse coppie. Due giudici indipendenti concordano fra loro più di
+   quanto il filtro concordi con ciascuno: il giudizio di rilevanza non è un artefatto
+   idiosincratico di Gemini, e il collo di bottiglia della pipeline è il *filtro* (bi-encoder),
+   non il giudice. Dichiarato per quello che è: accordo LLM↔LLM, non una verità umana.
+2. **Validazione umana** (in corso): le stesse 100 coppie etichettate alla cieca dall'autore, da
+   cui κ umano↔giudice e κ umano↔filtro. [🔲 risultato da inserire]
 
 #### 4.2 Un esperimento negativo istruttivo
 
