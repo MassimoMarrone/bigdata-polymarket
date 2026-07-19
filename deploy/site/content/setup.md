@@ -65,7 +65,21 @@ gira **senza rieseguire la pipeline**. Gli aggregati derivati (`leadlag*.parquet
 
 ## Pipeline (riproducibilità end-to-end)
 
-In ordine; ogni stadio riprende da dove era stato interrotto (il livello raw è append-only):
+Entrypoint unico, con gli stadi raggruppati **per costo** (i collector spendono crediti,
+l'arricchimento carica modelli per ore, l'analisi è questione di minuti):
+
+```bash
+python3 run.py analyze     # raw -> processed -> tutte le analisi (minuti, sicuro)
+python3 run.py test        # suite completa
+python3 run.py deliver     # PDF relazione + zip dataset
+python3 run.py dashboard   # avvia la dashboard
+python3 run.py enrich      # linking + sentiment/NER (ore, chiede conferma)
+python3 run.py collect     # istruzioni per i collector (deliberati, mai in batch)
+```
+
+I singoli stadi restano rilanciabili uno a uno — quando si rompe uno stadio si rilancia
+quello, non tutto. La mappa completa, in ordine; ogni stadio riprende da dove era stato
+interrotto (il livello raw è append-only):
 
 ```bash
 python3 pipeline/polymarket.py           # contratti + serie di prezzo (Gamma/CLOB API)

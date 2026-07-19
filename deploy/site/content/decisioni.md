@@ -1,7 +1,7 @@
 ---
 tags: [1]
 date created: Tuesday, June 16th 2026, 3:43:10 am
-date modified: Wednesday, July 15th 2026, 7:56:27 pm
+date modified: Sunday, July 19th 2026, 1:33:29 pm
 ---
 
 ## Decisioni Tecniche — Big Data Polymarket
@@ -295,26 +295,41 @@ I due modelli di **entailment** falliscono in direzioni opposte, il che conferma
 ### [2026-07-16] Reintroduzione di Reddit via Scrapfly (terza decisione di piattaforma)
 
 **Scelta:** raccogliere Reddit tramite `search.json` dietro **proxy residenziale Scrapfly**,
+
 budget ~$30 (piano Discovery), collector `pipeline/reddit_scrapfly.py`.
 
 **Perché la voce del 13/07 è superata.** Quella voce escludeva Reddit su due basi: (a) il 403
+
 dell'endpoint pubblico e (b) il timore che aggirarlo ricadesse nel "circumvent safety
+
 mechanisms" della Responsible Builder Policy. La base (b) è cambiata con un fatto nuovo: il
+
 **docente ha indicato esplicitamente Scrapfly** come via per il progetto ("provate con Scrapfly,
+
 se diventa costoso vedete voi"), fornendo anche gli script di scraping del corso — la via del
+
 proxy è quindi quella *sanzionata dalla sede didattica per questo lavoro*, non un aggiramento
+
 deciso in autonomia. Restava il vincolo (a) tecnico-economico: un probe ha verificato che
+
 `search.json` con sort=relevance raggiunge i post storici del 2024 (57/97 su un contratto di
+
 test) a ~32 crediti/richiesta, rendendo la raccolta completa fattibile nel budget.
 
 **Esito misurato:** 6.491 post su 340/380 contratti (89% raccolta, 86% dopo il filtro), 17.969
+
 commenti, follower/karma di ~3.000 autori; κ del linking su Reddit = 0.504 (soglia fissa, nessuna
+
 ricerca). Reddit è l'unica piattaforma bilanciata sui tre domini (§7.2) e ha reso il dataset
+
 conforme all'enum della traccia (reddit ✓, telegram ✓, Bluesky come sostituto motivato di X).
 
 **Ammissione documentale (dall'audit del 17/07):** questa voce è stata scritta il 17/07, a
+
 posteriori — la decisione era del 16 e il log non l'aveva registrata, lasciando in piedi la
+
 contraddizione con la voce del 13/07. Errore di processo, non di merito: registrato qui perché
+
 il log deve dire anche quando ha mancato il suo scopo.
 
 ---
@@ -322,7 +337,9 @@ il log deve dire anche quando ha mancato il suo scopo.
 ### [2026-07-17] RETTIFICA: il "lag +1" era un artefatto — il risultato vero è co-movimento same-day
 
 **Come è emerso.** Review finale pre-consegna: un test sintetico (dati costruiti con un social
+
 che *reagisce* il giorno dopo il movimento) ha prodotto il picco sul lato etichettato
+
 "anticipano". Da lì, due difetti indipendenti che si sommavano:
 
 1. **Etichetta del segno invertita** in `xcorr`: `shift(lag)` con lag positivo accoppia il
@@ -332,21 +349,33 @@ che *reagisce* il giorno dopo il movimento) ha prodotto il picco sul lato etiche
    giorno *t−1*. Un altro −1 di attribuzione che nessuno stava contando.
 
 **Risultato corretto** (convenzione `offset = giorno volume − giorno movimento`, fissata da
+
 `tests/test_correlation.py` con serie sintetiche che riproducono anche la convenzione midnight):
+
 picco a **offset 0** in aggregato E in tutti e tre i domini (finance 0,134 / politics 0,129 /
+
 sports 0,159), fianchi simmetrici (0,066 a ±1). **Co-movimento same-day, nessun lead misurabile
+
 in nessuna direzione.** Ritirata anche l'osservazione per-piattaforma "Reddit reattivo / Bluesky
+
 anticipatorio" (17/07 mattina): sotto la convenzione corretta i picchi si sparpagliano
+
 (Reddit 0, Bluesky +2, Telegram −5) — rumore.
 
 **Perché il bug è sopravvissuto:** produceva un risultato *plausibile* e coerente con la teoria
+
 (mercati efficienti → i social inseguono). I risultati che confermano le attese sono quelli che
+
 nessuno verifica. La suite di test copriva dashboard e feature del Task 3, non la matematica
+
 delle analisi — esattamente il buco dove il bug viveva.
 
 **Cosa NON cambia:** la tesi del progetto ("il mercato ha già letto i social") resta in piedi,
+
 portata da §7.1 (calibrazione mesi prima) e dal Task 3 (prezzo AUC 0,966 vs social 0,553;
+
 combinato non batte il prezzo). Cambia il §7.3: da claim direzionale a claim di sincronia.
 
 **Per l'orale:** raccontarlo. Un claim ritirato per auto-verifica con test di regressione è
+
 esattamente il metodo che il corso valuta.
