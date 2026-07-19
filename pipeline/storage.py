@@ -71,7 +71,7 @@ def posts() -> pd.DataFrame:
     if not tg.empty:
         tg["hashtags"] = "[]"
         frames.append(tg)
-    # Reddit: come Bluesky, i post portano gia' market_id (linked in reddit_collect.py)
+    # Reddit: come Bluesky, i post portano gia' market_id (linked in reddit_scrapfly.py)
     rdt = _read(RAW / "reddit" / "posts.jsonl")
     if not rdt.empty:
         rdt["hashtags"] = rdt["hashtags"].apply(

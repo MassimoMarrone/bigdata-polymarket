@@ -50,11 +50,11 @@ def env(key: str) -> str | None:
 
 
 def load() -> tuple[dict[str, dict], list[dict]]:
-    """Contracts, and every (post, contract) candidate from both platforms.
+    """Contracts, and every (post, contract) candidate from the three platforms.
 
     All files are already keyword-linked — Bluesky server-side at collection,
     Telegram locally in link_telegram.py, Reddit by search query in
-    reddit_collect.py — so the semantic filter below sees the same kind of input
+    reddit_scrapfly.py — so the semantic filter below sees the same kind of input
     from each, which is the point.
     """
     contracts = {c["market_id"]: c for c in map(json.loads, CONTRACTS.open())}

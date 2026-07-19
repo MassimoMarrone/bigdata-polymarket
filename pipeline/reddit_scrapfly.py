@@ -41,10 +41,22 @@ def keywords(q: str) -> str:
     return " ".join(kept[:6]) or q
 
 
+DONE = RAW / "done.txt"   # anche i contratti a ZERO risultati sono "fatti"
+
+
 def already_done() -> set[str]:
-    if not OUT.exists():
-        return set()
-    return {json.loads(l)["market_id"] for l in OUT.open() if l.strip()}
+    """Contratti gia' processati — inclusi quelli senza risultati.
+
+    Bug latente corretto in review (18/07): prima contava solo i market_id
+    presenti in posts.jsonl, quindi i ~40 contratti a zero post venivano
+    ri-interrogati (e ri-pagati: ~32 crediti l'uno) a ogni rilancio.
+    """
+    done: set[str] = set()
+    if OUT.exists():
+        done |= {json.loads(l)["market_id"] for l in OUT.open() if l.strip()}
+    if DONE.exists():
+        done |= {l.strip() for l in DONE.open() if l.strip()}
+    return done
 
 
 def fetch_search(client, query: str) -> list[dict]:
@@ -122,16 +134,18 @@ def main() -> None:
 
     print(f"{len(done)} contratti gia' fatti, {len(todo)} da raccogliere")
     tot = 0
-    with OUT.open("a", encoding="utf-8") as f:
+    with OUT.open("a", encoding="utf-8") as f, DONE.open("a") as df:
         for i, c in enumerate(todo, 1):
             try:
                 posts = collect_one(client, c)
             except Exception as e:
                 print(f"  [{i}/{len(todo)}] {c['market_id']}: ERR {type(e).__name__}: {e}")
-                continue
+                continue   # errore transitorio: NON marcato fatto, si ritenta al rilancio
             for p in posts:
                 f.write(json.dumps(p, ensure_ascii=False) + "\n")
             f.flush()
+            df.write(c["market_id"] + "\n")   # fatto anche se 0 risultati
+            df.flush()
             tot += len(posts)
             print(f"  [{i}/{len(todo)}] {c['category']:8s} +{len(posts):3d} in-finestra "
                   f"| '{keywords(c['question'])[:40]}'")

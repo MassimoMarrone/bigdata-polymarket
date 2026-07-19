@@ -1,8 +1,8 @@
-"""Language detection, sentiment and NER over the unique posts of both platforms.
+"""Language detection, sentiment and NER over the unique posts of the three platforms.
 
 Enrichment is keyed on the post, not on the (post, contract) pair: a post linked to
 three contracts is the same text three times, and scoring it once cuts the work by
-a third (43,494 unique posts against 58,668 pairs).
+a third (45,623 unique posts against 65,159 pairs, three platforms).
 
 Language is DETECTED, not trusted: 17,343 Bluesky posts carry no `langs` field at
 all, and Telegram carries none by construction. Non-English posts are kept in the
