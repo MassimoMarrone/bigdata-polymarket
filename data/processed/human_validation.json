@@ -1,0 +1,31 @@
+{
+ "n": 100,
+ "positivi": {
+  "umano": 54,
+  "giudice": 50,
+  "filtro_mpnet": 61,
+  "claude": 61
+ },
+ "kappa": {
+  "umano_giudice": 0.44,
+  "umano_filtro": 0.572,
+  "umano_claude": 0.532,
+  "claude_giudice": 0.62,
+  "filtro_giudice": 0.42
+ },
+ "ci95": {
+  "umano_giudice": [
+   0.255,
+   0.601
+  ],
+  "umano_filtro": [
+   0.402,
+   0.726
+  ],
+  "differenza": [
+   -0.083,
+   0.343
+  ]
+ },
+ "nota": "etichette umane dell'autore, cieche, stesso criterio del prompt del giudice"
+}

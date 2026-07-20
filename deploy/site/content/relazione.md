@@ -184,6 +184,8 @@ Collegare un post al contratto giusto è il problema centrale del progetto. Un a
    Gira in locale, gratis, applicabile a tutti i post.
 3. **Validazione** — un giudice LLM esterno (**Gemini**) valuta in zero-shot la pertinenza su un
    campione stratificato di 200 coppie, per **misurare** la qualità del filtro invece di asserirla.
+   Il giudice a sua volta è validato contro etichette umane (§4.1.1): è un proxy moderato, non
+   una verità — e la catena di validazione lo dichiara invece di assumerlo.
 
 **Figura 2 — l'imbuto, con i numeri reali.** Il filtro semantico scarta il **36% delle coppie**
 recuperate dalle parole chiave: è la misura diretta di quanto un linking a sole keyword sarebbe
@@ -256,19 +258,49 @@ fissa 0.35 (qui nessuna ricerca di soglia, quindi niente ottimismo da selezione)
 stratificato di 200 coppie: **κ = 0.504**. Il metodo generalizza: non è calibrato su una
 piattaforma sola.
 
-**Il limite del giudice — e due misure per circoscriverlo.** Il κ sopra misura l'accordo fra due
-sistemi automatici; l'accuratezza di Gemini su questo task non è garantita a priori. Due
-verifiche indipendenti:
+#### 4.1.1 Chi valida il validatore: una verità umana per il giudice
 
-1. **Accordo fra giudici LLM di famiglie diverse.** Un secondo LLM (Claude, famiglia Anthropic)
-   ha etichettato alla cieca 100 coppie del campione (50/50 sui verdetti del giudice, ordine
-   casuale, stesso prompt): **κ Claude↔Gemini = 0,62** (*substantial*), contro 0,42 di
-   filtro↔giudice sulle stesse coppie. Due giudici indipendenti concordano fra loro più di
-   quanto il filtro concordi con ciascuno: il giudizio di rilevanza non è un artefatto
-   idiosincratico di Gemini, e il collo di bottiglia della pipeline è il *filtro* (bi-encoder),
-   non il giudice. Dichiarato per quello che è: accordo LLM↔LLM, non una verità umana.
-2. **Validazione umana** (in corso): le stesse 100 coppie etichettate alla cieca dall'autore, da
-   cui κ umano↔giudice e κ umano↔filtro. [🔲 risultato da inserire]
+Il κ della tabella precedente misura l'accordo fra **due sistemi automatici**: dire che "misura"
+la qualità del linking presuppone che Gemini sia un buon proxy del giudizio di rilevanza — una
+assunzione, non un dato. Per chiuderla, **100 coppie del campione sono state etichettate a mano
+dall'autore**, alla cieca (verdetti del giudice non visibili, ordine casuale, campione bilanciato
+50/50 sui suoi verdetti) e con lo stesso identico criterio del prompt del giudice. In parallelo,
+le stesse 100 coppie sono state etichettate da un **secondo LLM di famiglia diversa** (Claude,
+Anthropic). Tutti i κ con intervalli bootstrap (5.000 ricampionamenti):
+
+| Coppia di giudici | κ di Cohen | CI 95% |
+|---|---|---|
+| **Umano ↔ filtro MPNet@0.35** | **0,572** | [0,40; 0,73] |
+| **Umano ↔ giudice Gemini** | **0,440** | [0,26; 0,60] |
+| Umano ↔ Claude | 0,532 | — |
+| Claude ↔ Gemini (due LLM) | 0,620 | — |
+| Filtro ↔ giudice (il κ di §4.1) | 0,420 | — |
+
+Tre letture, in ordine di importanza:
+
+**1. Il sospetto dell'audit era fondato: due LLM concordano fra loro più di quanto ciascuno
+concordi con l'umano** (0,620 contro 0,440 e 0,532). È la firma di **errori correlati**: modelli
+addestrati su dati e obiettivi simili sbagliano in modo simile, e un κ LLM↔LLM alto misura in
+parte quanto condividono lo stesso pregiudizio. È esattamente il motivo per cui una singola
+etichetta umana vale più di un terzo giudice automatico — e il motivo per cui il κ Claude↔Gemini
+del punto precedente **non** poteva sostituire questa verifica.
+
+**2. Il filtro concorda con l'umano più di quanto ci concordi il giudice** (0,572 contro 0,440;
+differenza +0,135, ma **CI 95% [−0,08; +0,34]: include lo zero**, quindi il dato è *suggestivo,
+non conclusivo* — in 89 ricampionamenti su 100 il filtro batte il giudice). Se la direzione
+regge, la conseguenza è che il κ = 0,42 di §4.1 **sottostimava** il filtro: misurando l'accordo
+con un proxy imperfetto, veniva penalizzato anche dagli errori del proxy. Contro la verità umana
+il filtro ha **precision 0,77 e recall 0,87**, contro 0,76 e 0,70 del giudice: stessa precisione,
+recall nettamente migliore.
+
+**3. Il giudice resta utile, ma va declassato da "gold standard" a "proxy moderato"** (κ 0,44,
+*moderate* in Landis-Koch). Questo non invalida la calibrazione — la soglia 0,35 è scelta sul
+criterio recall-first, che la verità umana conferma (recall 0,87) — ma cambia come va letto ogni
+κ del progetto: sono accordi con un proxy, non distanze da una verità. Con n=100 gli intervalli
+sono larghi e tutte queste differenze vanno prese per quello che sono: indicazioni, non verdetti.
+
+*Riproducibilità:* etichette umane in `data/processed/max_labels_partial.json`, quelle del
+secondo LLM in `claude_labels.json`, κ e bootstrap in `human_validation.json`.
 
 #### 4.2 Un esperimento negativo istruttivo
 
