@@ -52,7 +52,7 @@ def render(where: str) -> None:
     st.caption("La traccia chiede se la direzione del sentiment è allineata alla "
                "direzione del prezzo. Risposta misurata: no — la correlazione firmata "
                "è ~0 a ogni lag e nei giorni di grande movimento il segno del sentiment "
-               "concorda col segno del prezzo il 47,5% delle volte (coin flip, p=0.39). "
+               "concorda col segno del prezzo il 50,1% delle volte (231/461 giorni; coin flip, p=1,0). "
                "Il segnale social sta nel QUANTO si parla, non nel COME: la polarità è "
                "sul tema, non sull'esito ('Iran colpirà Israele?' che sale è una brutta "
                "notizia a sentiment negativo).")
